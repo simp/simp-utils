@@ -12,9 +12,6 @@ group :test do
   # Ruby code coverage
   gem 'simplecov'
   gem 'simp-rake-helpers', ENV.fetch('SIMP_RAKE_HELPERS_VERSION', '~> 3.5')
-end
-
-group :development do
   gem 'travis'
   gem 'travis-lint'
   gem 'travish'

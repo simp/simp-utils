@@ -1,0 +1,16 @@
+---
+language: ruby
+sudo: false
+cache: bundler
+before_script:
+- bundle update
+bundler_args: "--without system_tests"
+before_install: rm Gemfile.lock || true
+script:
+  - bundle exec rake spec
+notifications:
+  email: false
+rvm:
+- 2.1.9
+matrix:
+  fast_finish: true

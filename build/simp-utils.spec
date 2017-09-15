@@ -1,7 +1,7 @@
 Summary: SIMP Utils
 Name: simp-utils
 Version: 6.0.0
-Release: 1
+Release: 0
 License: Apache License, Version 2.0
 Group: Applications/System
 Source: %{name}-%{version}-%{release}.tar.gz
@@ -58,7 +58,7 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
-* Tue Nov 08 2016 Nick Miller <nick.miller@onyxpoint.com> - 6.0.0-1
+* Tue Nov 08 2016 Nick Miller <nick.miller@onyxpoint.com> - 6.0.1-0
 - Simp-utils is now its own module
 - Added travis file to run tests
 

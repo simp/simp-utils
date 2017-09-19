@@ -42,6 +42,7 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 %defattr(-,root,root)
 /usr/local/bin/unpack_dvd
 /usr/local/bin/hiera_config
+/usr/local/bin/set_environment
 /usr/local/sbin/puppetlast
 /usr/local/sbin/gen-ldap-update
 /usr/local/sbin/updaterepos
@@ -58,6 +59,10 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Tue Sep 19 2017 Liz Nemsick <lnemsick.simp@gmail.com> - 6.0.2-0
+- Add set_environment node classifier.  Can be used as a simple,
+  YAML-based ENC.
+
 * Tue Nov 08 2016 Nick Miller <nick.miller@onyxpoint.com> - 6.0.1-0
 - Simp-utils is now its own module
 - Added travis file to run tests

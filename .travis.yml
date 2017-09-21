@@ -11,6 +11,10 @@ script:
 notifications:
   email: false
 rvm:
-- 2.1.9
+  - 1.8.7 # CentOS 6
+  - 1.9.3 # CentOS 7
+  - 2.0.0
+  - 2.1.9 # Current Puppet AIO version
+  - 2.4.1 # Future Puppet AIO version
 matrix:
   fast_finish: true

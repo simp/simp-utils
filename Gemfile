@@ -8,9 +8,10 @@ gem_sources.each { |gem_source| source gem_source }
 group :test do
   gem 'rake'
   gem 'rspec'
+  gem 'mocha'
+  gem 'puppet', ENV.fetch('PUPPET_VERSION', '~> 4.0')
   # Ruby code coverage
   gem 'simplecov'
-  gem 'simp-rake-helpers', ENV.fetch('SIMP_RAKE_HELPERS_VERSION', nil)
   gem 'travis'
   gem 'travis-lint'
   gem 'travish'

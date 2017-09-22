@@ -1,6 +1,6 @@
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.0.0
+Version: 6.0.2
 Release: 0
 License: Apache License, Version 2.0
 Group: Applications/System

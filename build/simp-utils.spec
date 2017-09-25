@@ -5,13 +5,13 @@ Release: 0
 License: Apache License, Version 2.0
 Group: Applications/System
 Source: %{name}-%{version}-%{release}.tar.gz
-Buildroot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-Requires: puppet >= 4.0.0
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
+Requires: puppet-agent >= 1.0.0
 Requires: mkisofs
 Requires: yum-utils
 Provides: simp_utils
 Obsoletes: simp_utils
-Buildarch: noarch
+BuildArch: noarch
 
 %description
 Useful scripts for dealing with a Puppet environment.
@@ -26,6 +26,7 @@ Useful scripts for dealing with a Puppet environment.
 
 # Make your directories here.
 mkdir -p %{buildroot}/usr/share/simp
+mkdir -p %{buildroot}/usr/share/simp/ldifs
 mkdir -p %{buildroot}/usr/local/bin
 mkdir -p %{buildroot}/usr/local/sbin
 

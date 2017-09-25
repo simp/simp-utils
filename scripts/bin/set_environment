@@ -1,0 +1,130 @@
+#!/bin/ruby
+#
+# This is a YAML-based node classifier which can be used as a Puppet
+# External Node Classifier (ENC). It identifies the environment for
+# a Puppet client, based on rules listed in a user-provided
+# configuration file, '/etc/puppetlabs/puppet/environments.yaml'.
+#
+# INPUTS/OUTPUTS
+# This script should be called with a Puppet client FQDN as a
+# single command line argument.
+#
+# It will return a YAML-formatted string with a single key,
+# 'environment'.
+#
+# For example,
+#
+#   cmdline$  /usr/local/bin/set_environment foo1.bar
+#   ---
+#   environment: production
+#
+#
+# CONFIGURATION
+# Each rule in '/etc/puppetlabs/puppet/environments.yaml' should have
+# the following format:
+#
+#      <regex/hostname> : <environment>
+#
+# where,
+#
+# <regex/hostname>: May be either a regular expression or a simple
+#                   string that matches against the FQDN of the system.
+#
+#      NOTE: The rule *must* have '/' as the first and last character
+#            if it is a regex.
+#
+# <environment>: A string representation of the environment. This is
+#                what will be passed back to the Puppet Server
+#
+# Rules are processed from the top down and the first match wins!
+# If no match is found or 'environment.yaml' does not exist, this
+# script will return the default environment: 'production'.
+#
+# EXAMPLE
+#
+# ---
+# 'foo1.bar' : 'production' => Matches only 'foo1.bar' and places it in the
+#                              'production' environment.
+#
+# '/^foo\.bar/' : 'foobar'  => Matches all hosts that start with foo.bar and
+#                              places them in the 'foobar' environment.
+#
+# USAGE
+#
+# 1. Ensure this script can be executed by the Puppet server.
+#
+# 2. Configure Puppet to use this script as an ENC
+#    a. Add, or change, the line 'node_terminus' to 'exec' in the
+#       [master] section of puppet.conf.
+#    b. Set the 'external_nodes' entry in the [master] section of
+#       puppet.conf to point to this script.
+#
+#    The resulting lines should look something like this:
+#
+#      ...
+#      [master]
+#      ...
+#      node_terminus = exec
+#      external_nodes = /usr/local/bin/set_environment
+#      ...
+#
+# 3. Add the file '/etc/puppetlabs/puppet/environments.yaml' to
+#    your system.
+#
+#    NOTE:  You can verify that the file is properly formatted
+#    and yields the classification desired by running this script
+#    manually.  For example,
+#
+#    /usr/local/bin/set_environment foo1.bar
+#
+# 4. Restart the Puppet Server process
+#
+#
+require 'yaml'
+module Simp
+  class YamlNodeClassifier
+    DEFAULT_CONFIG_FILE = '/etc/puppetlabs/puppet/environments.yaml'
+    DEFAULT_ENVIRONMENT = 'production'
+    
+    def run(args, config_file = DEFAULT_CONFIG_FILE, default_env = DEFAULT_ENVIRONMENT)
+      fqdn = args[0]
+      
+      raise("You must pass the FQDN of the host as the first argument") unless fqdn
+      
+      # Set result to the default environment if there is no match
+      result = { 'environment' => default_env }
+      
+      if File.readable?(config_file)
+        environment_data = YAML.load(File.read(config_file)).to_hash
+      
+        environment_data.each_pair do |host,value|
+          if host[0].chr == '/'
+            if host[-1].chr == '/'
+      
+              clean_host = host[1..-2]
+      
+              if Regexp.new(clean_host).match(fqdn)
+                result['environment'] = value.to_s.strip
+                break
+              end
+            else
+              fail("Rule '#{host}' is not a valid hostname or regex")
+            end
+          else
+            if host == fqdn
+              result['environment'] = value.to_s.strip
+              break
+            end
+          end
+        end
+      end
+      
+      puts result.to_yaml
+      return 0
+    end
+  end
+end
+
+if __FILE__ == $0
+  exit Simp::YamlNodeClassifier.new.run(ARGV)
+end

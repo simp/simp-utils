@@ -1,15 +1,16 @@
 #!/usr/bin/rake -T
 
-require 'simp/rake/pupmod/helpers'
+require 'rspec/core/rake_task'
+require 'rake/clean'
 
-Simp::Rake::Pupmod::Helpers.new(File.dirname(__FILE__))
+RSpec::Core::RakeTask.new(:spec)
+
 
 # coverage/ contains SimpleCov results
 CLEAN.include 'coverage'
 
 
-
-# 'scripts' is not one of the standard directories specified by 
+# 'scripts' is not one of the standard directories specified by
 # the :spec_standlone task in puppetlabs_spec_helper/rake_tasks.rb.
 # Since we can't override Rake task, need to remove that task and
 # then create a new one with the same name.

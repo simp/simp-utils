@@ -1,0 +1,5 @@
+---
+  'worker1.test.local'             : 'latest_and_greatest'
+  '/^worker[0-9]+\.test\.local$/'  : 'production'
+  '/^missing_trailing_slash[0-9]+' : 'production'
+  'logserver1.test.local'          : '6_1_upgrade'

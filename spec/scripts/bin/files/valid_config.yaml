@@ -1,0 +1,7 @@
+---
+  'worker1.test.local'            : 'latest_and_greatest'
+  '/^worker[0-9]+\.test\.local$/' : 'production'
+  '/^logserver[0-9]+/'            : 'production'
+
+  # this rule will not be executed because previous rule  matches
+  'logserver1.test.local'         : '6_1_upgrade'

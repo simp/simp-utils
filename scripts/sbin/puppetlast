@@ -197,14 +197,23 @@ class PuppetLast
     node_data = []
 
     hosts.each do |host|
-      last_checkin = Time.now - Time.parse(host[:catalog_timestamp])
+      if host[:catalog_timestamp].nil?
+        # This can happen in weird cases. Mark as an expired node, so
+        # the expired logic doesn't try to do math on a nil timestamp.
+        last_checkin = nil
+        formatted_checkin = 'N/A'
+        host[:expired] = nil
+      else
+        last_checkin = Time.now - Time.parse(host[:catalog_timestamp])
+        formatted_checkin = sprintf("%#{@options.round_to}f",(last_checkin * @options.divisor).abs)
+      end
       node_data << {
         :last_checkin => last_checkin,
         :expired      => host[:expired].nil? ? false : host[:expired],
         :certname     => host[:certname],
         :environment  => host[:catalog_environment].nil? ? 'N/A' : host[:catalog_environment],
         :status       => host[:latest_report_status].nil? ? 'N/A' : host[:latest_report_status],
-        :formatted_checkin => sprintf("%#{@options.round_to}f",(last_checkin * @options.divisor).abs),
+        :formatted_checkin => formatted_checkin
       }
     end
 
@@ -224,9 +233,17 @@ class PuppetLast
     when :certname
       return hosts.sort{ |a,b| a[:certname] <=> b[:certname] }
     when :time
-      return hosts.sort{ |a,b| a[:last_checkin] <=> b[:last_checkin] }
+      return hosts.sort{ |a,b| 
+        if a[:last_checkin].nil? and !b[:last_checkin].nil?
+          1
+        elsif !a[:last_checkin].nil? and b[:last_checkin].nil?
+          -1
+        else
+          a[:last_checkin] <=> b[:last_checkin]
+        end
+      }
     when :status
-      return hosts.sort{ |a,b| a[:status] <=> b[:status] }
+      return hosts.sort{ |a,b| a[:status].downcase <=> b[:status].downcase }
     when :environment
       return hosts.sort{ |a,b| a[:environment] <=> b[:environment] }
     else
@@ -238,6 +255,50 @@ class PuppetLast
   def find_longest(sorted_data, key)
     keys = sorted_data.map { |h| h[key].to_s }
     return keys.max_by(&:length).length
+  end
+
+  def print_node_without_checkin(node, col_len)
+    if @options.detailed
+      printf(
+        "%-#{col_len[:certname]}s from environment %-#{col_len[:environment]}s has no reported check in\n", 
+        node[:certname],
+        node[:environment]
+      )
+    else
+      printf("%-#{col_len[:certname]}s has no reported check in\n", node[:certname])
+    end
+  end
+
+  def print_node_with_checkin(node, col_len)
+    if node[:last_checkin] < 0
+      msg = "%-#{col_len[:certname]}s time issue: %#{col_len[:formatted_checkin]}#{@options.round_to}f %s in the future\n"
+    else node[:last_checkin] < @options.expsecs
+      if @options.detailed
+        msg = "%-#{col_len[:certname]}s from environment %-#{col_len[:environment]}s checked in %#{col_len[:formatted_checkin]}#{@options.round_to}f %s ago with status %-#{col_len[:status]}s\n"
+      else
+        msg = "%-#{col_len[:certname]}s checked in %#{col_len[:formatted_checkin]}#{@options.round_to}f %s ago\n"
+      end
+    end
+
+    if node[:last_checkin].to_s =~ /e/ then
+      puts "#{node[:certname]} outside the bounds of time and space"
+    else
+      if @options.detailed
+        printf(msg,
+          node[:certname],
+          node[:environment],
+          node[:formatted_checkin],
+          @options.outtime,
+          node[:status]
+        )
+      else
+        printf(msg,
+          node[:certname],
+          node[:formatted_checkin],
+          @options.outtime
+        )
+      end
+    end
   end
 
   def main(args)
@@ -266,41 +327,17 @@ class PuppetLast
     end
 
     # ... and the rest of the table
-    node_data.each do |node|
+    sorted_data.each do |node|
       # expired nodes aren't included when returning all nodes from PuppetDB,
       # but users can specify nodes manually
-      if not node[:expired] then
-        if node[:last_checkin] < 0
-          msg = "%-#{col_len[:certname]}s time issue: %#{col_len[:formatted_checkin]}#{@options.round_to}f %s in the future\n"
-        else node[:last_checkin] < @options.expsecs
-          if @options.detailed
-            msg = "%-#{col_len[:certname]}s from environment %-#{col_len[:environment]}s checked in %#{col_len[:formatted_checkin]}#{@options.round_to}f %s ago with status %-#{col_len[:status]}s\n"
-          else
-            msg = "%-#{col_len[:certname]}s checked in %#{col_len[:formatted_checkin]}#{@options.round_to}f %s ago\n"
-          end
-        end
-
-        if node[:last_checkin].to_s =~ /e/ then
-          puts "#{node[:certname]} outside the bounds of time and space"
-        else
-          if @options.detailed
-            printf(msg,
-              node[:certname],
-              node[:environment],
-              node[:formatted_checkin],
-              @options.outtime,
-              node[:status]
-            )
-          else
-            printf(msg,
-              node[:certname],
-              node[:formatted_checkin],
-              @options.outtime
-            )
-          end
-        end
-      else
+      if node[:expired]
         puts "#{node[:certname]} expired"
+      else
+        if node[:last_checkin].nil?
+          print_node_without_checkin(node, col_len)
+        else
+          print_node_with_checkin(node, col_len)
+        end
       end
     end
     return 0

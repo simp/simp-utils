@@ -10,6 +10,8 @@ group :test do
   gem 'puppet', ENV.fetch('PUPPET_VERSION',  '~> 4.0')
   gem 'rspec'
   gem 'rspec-puppet'
+  gem 'simplecov'
+  gem 'mocha'
   gem 'hiera-puppet-helper'
   gem 'puppetlabs_spec_helper'
   gem 'metadata-json-lint'

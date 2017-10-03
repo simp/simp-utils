@@ -60,6 +60,10 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Tue Oct 03 2017 Jeanne Greulich <jeanne.greulich@onyxpoint.com> - 6.0.2-0
+- added example ldifs to be copied to /usr/share/simp
+- changed rake and gemfiles so pkg:rpm would work
+
 * Tue Sep 19 2017 Liz Nemsick <lnemsick.simp@gmail.com> - 6.0.2-0
 - Add set_environment node classifier.  Can be used as a simple,
   YAML-based ENC.

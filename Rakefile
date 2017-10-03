@@ -2,6 +2,9 @@
 
 require 'rspec/core/rake_task'
 require 'rake/clean'
+require 'rake/packagetask'
+require 'simp/rake'
+require 'simp/rake/beaker'
 
 RSpec::Core::RakeTask.new(:spec)
 
@@ -21,4 +24,9 @@ RSpec::Core::RakeTask.new(:spec_standalone) do |t|
   t.pattern = 'spec/scripts/**/*_spec.rb'
 end
 
+# Package Tasks
+Simp::Rake::Pkg.new(File.dirname(__FILE__))
+
+# Acceptance Tests
+Simp::Rake::Beaker.new(File.dirname(__FILE__))
 

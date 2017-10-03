@@ -10,7 +10,7 @@ group :test do
   gem 'rspec'
   gem 'simplecov'
   gem 'mocha'
-  gem 'simp-rake-helpers', ENV.fetch('SIMP_RAKE_HELPERS_VERSION', ['>= 5.0.0', '<= 6.0.0'])
+  gem 'simp-rake-helpers', ENV.fetch('SIMP_RAKE_HELPERS_VERSION', ['>= 4.0.0', '<= 6.0.0'])
   gem 'travis'
   gem 'travis-lint'
   gem 'travish'
@@ -18,10 +18,4 @@ group :test do
   gem 'guard-rake'
   gem 'pry'
   gem 'pry-doc'
-end
-
-group :system_tests do
-  gem 'beaker'
-  gem 'beaker-rspec'
-  gem 'simp-beaker-helpers', ENV.fetch('SIMP_BEAKER_HELPERS_VERSION', '~> 1.7')
 end

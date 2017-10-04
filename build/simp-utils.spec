@@ -1,6 +1,6 @@
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.0.2
+Version: 6.0.3
 Release: 0
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -60,6 +60,10 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+
+* Tue Oct 03 2017 Liz Nemsick <lnemsick.simp@gmail.com> - 6.0.3-0
+- Fixed bug in which puppetlast sort options were not working.
+
 * Tue Oct 03 2017 Jeanne Greulich <jeanne.greulich@onyxpoint.com> - 6.0.2-0
 - added example ldifs to be copied to /usr/share/simp
 - changed rake and gemfiles so pkg:rpm would work

@@ -9,15 +9,17 @@ script:
 notifications:
   email: false
 rvm:
-  - 1.8.7 # CentOS 6
-  - 1.9.3 # CentOS 7 (old)
-  - 2.0.0 # CentOS 7
+# Would like to test with older Ruby versions,
+# but gems don't resolve.
+#  - 1.8.7 # CentOS 6
+#  - 1.9.3 # CentOS 7 (old)
+#  - 2.0.0 # CentOS 7
   - 2.1.9 # Current Puppet AIO version
   - 2.4.1 # Future Puppet AIO version
 matrix:
   fast_finish: true
   allow_failures:
-    - rvm: 1.8.7
-    - rvm: 1.9.3
-    - rvm: 2.0.0
+#    - rvm: 1.8.7
+#    - rvm: 1.9.3
+#    - rvm: 2.0.0
     - rvm: 2.4.1

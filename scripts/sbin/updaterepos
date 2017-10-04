@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/bin/ruby
 
 # This class shamelessly borrowed from
 # http://www.software-testing.com.au/blog/2010/01/13/text-based-progress-bar-in-ruby-for-command-line-programs/

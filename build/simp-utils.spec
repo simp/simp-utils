@@ -61,7 +61,7 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 
 %changelog
 
-* Wed Oct 04 2017 Trevor Vaughan <tvaughan@onyxpoint.com> - 6.0-4-0
+* Wed Oct 04 2017 Trevor Vaughan <tvaughan@onyxpoint.com> - 6.0.4-0
 - Fixed an incorrect dependency on /bin/ruby as opposed to /usr/bin/ruby
 - Changed all instances of #!/usr/bin/env ruby to #!/usr/bin/ruby per the
   Fedora packaging guidelines

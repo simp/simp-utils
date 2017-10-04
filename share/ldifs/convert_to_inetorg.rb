@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/bin/ruby
 
 # A script to convert a all users in a running LDAP instance over to
 # InetOrgPerson entries.

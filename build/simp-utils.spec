@@ -1,6 +1,6 @@
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.0.3
+Version: 6.0.4
 Release: 0
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -60,6 +60,11 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+
+* Wed Oct 04 2017 Trevor Vaughan <tvaughan@onyxpoint.com> - 6.0-4-0
+- Fixed an incorrect dependency on /bin/ruby as opposed to /usr/bin/ruby
+- Changed all instances of #!/usr/bin/env ruby to #!/usr/bin/ruby per the
+  Fedora packaging guidelines
 
 * Tue Oct 03 2017 Liz Nemsick <lnemsick.simp@gmail.com> - 6.0.3-0
 - Fixed bug in which puppetlast sort options were not working.

@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/bin/ruby
 
 # This script is intended to assist users in upgrading from the SIMP fork of
 # Hiera to the latest Puppet Labs supported release.

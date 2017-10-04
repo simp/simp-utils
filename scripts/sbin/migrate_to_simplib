@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/bin/ruby
 
 # This script is intended to assist users in upgrading their modules and hieradata
 # from the using `common` and `functions` module.

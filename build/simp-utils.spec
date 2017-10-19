@@ -1,6 +1,6 @@
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.0.4
+Version: 6.1.0
 Release: 0
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -8,6 +8,8 @@ Source: %{name}-%{version}-%{release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Requires: puppet-agent >= 1.0.0
 Requires: mkisofs
+Requires: rpm
+Requires: yum
 Requires: yum-utils
 Provides: simp_utils
 Obsoletes: simp_utils
@@ -25,8 +27,8 @@ Useful scripts for dealing with a Puppet environment.
 [ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
 # Make your directories here.
-mkdir -p %{buildroot}/usr/share/simp
 mkdir -p %{buildroot}/usr/share/simp/ldifs
+mkdir -p %{buildroot}/usr/share/simp/upgrade_scripts
 mkdir -p %{buildroot}/usr/local/bin
 mkdir -p %{buildroot}/usr/local/sbin
 
@@ -42,16 +44,12 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 %files
 %defattr(-,root,root)
 /usr/local/bin/unpack_dvd
-/usr/local/bin/hiera_config
 /usr/local/bin/set_environment
 /usr/local/sbin/puppetlast
 /usr/local/sbin/gen-ldap-update
 /usr/local/sbin/updaterepos
-/usr/local/sbin/hiera_upgrade
-/usr/local/sbin/migrate_to_simplib
 /usr/share/simp
-%exclude /usr/share/simp/upgrade_scripts
-%attr(0750,-,-) /usr/share/simp/upgrade_scripts
+%attr(0750,root,root) /usr/share/simp/upgrade_scripts
 
 %post
 # Post installation stuff
@@ -60,6 +58,13 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+
+* Wed Oct 18 2017 Liz Nemsick <lnemsick.simp@gmail.com> - 6.1.0-0
+- Added script to upgrade SIMP 6.0.0 to SIMP 6.1.0
+- Removed obsolete scripts
+  - hiera_config
+  - hiera_upgrade
+  - migrate_to_simplib
 
 * Wed Oct 04 2017 Trevor Vaughan <tvaughan@onyxpoint.com> - 6.0.4-0
 - Fixed an incorrect dependency on /bin/ruby as opposed to /usr/bin/ruby

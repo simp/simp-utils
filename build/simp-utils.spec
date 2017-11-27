@@ -1,6 +1,6 @@
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.1.0
+Version: 6.1.1
 Release: 0
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -58,6 +58,8 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Mon Nov 27 2017 Nick Markowski <nicholas.markowski@onyxpoint.com> - 6.1.1-0
+- Sample LDIFS recommend UID/GID above 1000
 
 * Wed Oct 18 2017 Liz Nemsick <lnemsick.simp@gmail.com> - 6.1.0-0
 - Added script to upgrade SIMP 6.0.0 to SIMP 6.1.0

@@ -1,25 +1,62 @@
+# The testing matrix considers ruby/puppet versions supported by SIMP and PE:
+# ------------------------------------------------------------------------------
+#  release    pup   ruby      eol
+# PE 2016.4   4.7   2.1.9  TBD (LTS)
+# PE 2016.5   4.8   2.1.9  2017-10-31
+# SIMP6.0.0   4.8   2.1.9  TBD
+# PE 2017.1   4.9   2.1.9  2017-10-31
+# PE 2017.2   4.10  2.1.9  TBD
 ---
 language: ruby
 cache: bundler
 sudo: false
-before_install: rm Gemfile.lock || true
-script:
-  - bundle update
-  - bundle exec rake spec
+
+bundler_args: --without development system_tests --path .vendor
+
 notifications:
   email: false
-rvm:
-# Would like to test with older Ruby versions,
-# but gems don't resolve.
-#  - 1.8.7 # CentOS 6
-#  - 1.9.3 # CentOS 7 (old)
-#  - 2.0.0 # CentOS 7
-  - 2.1.9 # Current Puppet AIO version
-  - 2.4.1 # Future Puppet AIO version
-matrix:
-  fast_finish: true
+
+addons:
+  apt:
+    packages:
+      - rpm
+
+before_install:
+  - rm -f Gemfile.lock
+
+jobs:
   allow_failures:
-#    - rvm: 1.8.7
-#    - rvm: 1.9.3
-#    - rvm: 2.0.0
-    - rvm: 2.4.1
+    - env: STRICT_VARIABLES=yes TRUSTED_NODE_DATA=yes PUPPET_VERSION="~> 5.0"
+
+  include:
+    - stage: check
+      rvm: 2.1.9
+      script:
+        - bundle exec rake pkg:compare_latest_tag
+        - bundle exec rake pkg:create_tag_changelog
+
+    - stage: spec
+      rvm: 2.4.1
+      script:
+        - bundle exec rake spec
+
+    - stage: spec
+      rvm: 2.1.9
+      script:
+        - bundle exec rake spec
+
+    - stage: deploy
+      rvm: 2.4.1
+      script:
+        - true
+      before_deploy:
+        - "export SPECFILE_VERSION=`rpm -q --specfile build/*.spec --queryformat '%{VERSION}'`"
+        - '[[ $TRAVIS_TAG =~ ^${SPECFILE_VERSION}$ ]]'
+      deploy:
+        - provider: releases
+          api_key:
+              secure:  "nu21GrVv32ROPxcVT/98WCfC+wPye7he0QbEHCl/YaMP8/uDpz1hm8l/HaEox++cWNsA+gxBNsuFEWoCOo4XUb/OGmpK9440wTIxtkzbdd1+D1ZCBMdrzRLd+PGyGdYaMOizuNfaKKNxOeHdaIHeJ63zTTbKk/aOkEio5f3slryNigNeoVo+JDhjzQfLIPIK2ocKPos8sEwItIJaXZCwbCqxLrtug1ORITORrjvjcOVXaY7RMqxnyN4u6wNhsfR39kNBR+DGbtrsw8M4Y70D3cQb3d13LcbP4aYn7LH2VU6POJB3k5kl3zQBy4405XrKvFX1dfaT3kY7ALthdNY1vwefKIWsWwQn2RNsK4g3nWNrUFfEbt4cmxMRda1LWk4xGEIOZi/8iPFXrqq9yiqI6h0dMma/HJ0HG5gbGR4ucXwhW6fLoRV5seDk7i7rqFPnrufm/Bk6I5xuvYderfQLh8BPdtQGV9t8nHHGSi/hZCtTi47uy6vin/6k4x29l3ZrbEfbr3DmiksDP5T7eQp1OuGLRSCAUkDrixXCfuz/EfAr1MsnxYrCzaHTkfhBpFNAbvoSDM9j42/DKaj/6JgzS+1ndzpSZspYpuMapqvRQY/ykXEwi0IC5v9+UwUwb85+yNCoowI9I0EL+Gy4Z8gcv58MV98tTsd0ni8ldUOJycc="
+          skip_cleanup: true
+          on:
+            tags: true
+            condition: '($SKIP_PUBLISH != true)'

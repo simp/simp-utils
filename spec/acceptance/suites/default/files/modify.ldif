@@ -1,0 +1,109 @@
+# You probably want to pipe the output of this script into something like the following:
+# ldapmodify -H ldap://<your LDAP server> -c -ZZ -M -x -W -D cn=LDAPAdmin,ou=People,dc=example,dc=com
+
+dn: cn=default,ou=pwpolicies,dc=example,dc=com
+changetype: modify
+replace: cn
+cn: default
+-
+replace: pwdAttribute
+pwdAttribute: userPassword
+-
+replace: pwdMinAge
+pwdMinAge: 86400
+-
+replace: pwdMaxAge
+pwdMaxAge: 15552000
+-
+replace: pwdInHistory
+pwdInHistory: 24
+-
+replace: pwdCheckQuality
+pwdCheckQuality: 2
+-
+replace: pwdMinLength
+pwdMinLength: 14
+-
+replace: pwdExpireWarning
+pwdExpireWarning: 1209600
+-
+replace: pwdGraceAuthNLimit
+pwdGraceAuthNLimit: -1
+-
+replace: pwdLockout
+pwdLockout: TRUE
+-
+replace: pwdLockoutDuration
+pwdLockoutDuration: 900
+-
+replace: pwdMaxFailure
+pwdMaxFailure: 5
+-
+replace: pwdFailureCountInterval
+pwdFailureCountInterval: 900
+-
+replace: pwdMustChange
+pwdMustChange: TRUE
+-
+replace: pwdAllowUserChange
+pwdAllowUserChange: TRUE
+-
+replace: pwdSafeModify
+pwdSafeModify: FALSE
+-
+replace: pwdCheckModule
+pwdCheckModule: simp_check_password.so
+
+dn: cn=noExpire_noLockout,ou=pwpolicies,dc=example,dc=com
+changetype: modify
+replace: cn
+cn: noExpire_noLockout
+-
+replace: pwdAttribute
+pwdAttribute: userPassword
+-
+replace: pwdMinAge
+pwdMinAge: 0
+-
+replace: pwdMaxAge
+pwdMaxAge: 0
+-
+replace: pwdInHistory
+pwdInHistory: 24
+-
+replace: pwdCheckQuality
+pwdCheckQuality: 2
+-
+replace: pwdMinLength
+pwdMinLength: 14
+-
+replace: pwdExpireWarning
+pwdExpireWarning: 0
+-
+replace: pwdGraceAuthNLimit
+pwdGraceAuthNLimit: -1
+-
+replace: pwdLockout
+pwdLockout: FALSE
+-
+replace: pwdLockoutDuration
+pwdLockoutDuration: 900
+-
+replace: pwdMaxFailure
+pwdMaxFailure: 5
+-
+replace: pwdFailureCountInterval
+pwdFailureCountInterval: 900
+-
+replace: pwdMustChange
+pwdMustChange: FALSE
+-
+replace: pwdAllowUserChange
+pwdAllowUserChange: FALSE
+-
+replace: pwdSafeModify
+pwdSafeModify: FALSE
+-
+replace: pwdCheckModule
+pwdCheckModule: simp_check_password.so
+

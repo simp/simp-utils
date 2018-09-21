@@ -1,0 +1,97 @@
+dn: dc=example,dc=com
+dc: example
+objectClass: top
+objectClass: domain
+
+dn: ou=Hosts,dc=example,dc=com
+ou: Hosts
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Rpc,dc=example,dc=com
+ou: Rpc
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Services,dc=example,dc=com
+ou: Services
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Mounts,dc=example,dc=com
+ou: Mounts
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Networks,dc=example,dc=com
+ou: Networks
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=People,dc=example,dc=com
+ou: People
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Group,dc=example,dc=com
+ou: Group
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Netgroup,dc=example,dc=com
+ou: Netgroup
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Protocols,dc=example,dc=com
+ou: Protocols
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Aliases,dc=example,dc=com
+ou: Aliases
+objectClass: top
+objectClass: organizationalUnit
+
+dn: cn=localhost.localdomain,ou=Hosts,dc=example,dc=com
+objectClass: top
+objectClass: ipHost
+objectClass: device
+ipHostNumber: 127.0.0.1
+cn: localhost.localdomain
+cn: localhost
+
+dn: cn=LDAPAdmin,ou=People,dc=example,dc=com
+cn: LDAPAdmin
+objectClass: organizationalRole
+
+dn: cn=LDAPSync,ou=Hosts,dc=example,dc=com
+objectClass: person
+cn: LDAPSync
+sn: Internal
+userPassword: {SSHA}somepasswordsomepasswordsomepass
+pwdPolicySubentry: cn=noExpire_noLockout,ou=pwpolicies,dc=example,dc=com
+
+dn: cn=hostAuth,ou=Hosts,dc=example,dc=com
+objectClass: person
+cn: hostAuth
+sn: Internal
+userPassword: {SSHA}somepasswordsomepasswordsomepass
+pwdPolicySubentry: cn=noExpire_noLockout,ou=pwpolicies,dc=example,dc=com
+
+dn: cn=users,ou=Group,dc=example,dc=com
+objectClass: posixGroup
+objectClass: top
+cn: users
+gidNumber: 100
+
+dn: cn=administrators,ou=Group,dc=example,dc=com
+objectClass: posixGroup
+objectClass: top
+cn: administrators
+gidNumber: 700
+
+dn: ou=pwpolicies,dc=example,dc=com
+ou: pwpolicies
+objectClass: top
+objectClass: organizationalUnit

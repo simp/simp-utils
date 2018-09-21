@@ -1,0 +1,145 @@
+dn: dc=example,dc=com
+dc: example
+objectClass: top
+objectClass: domain
+
+dn: ou=Hosts,dc=example,dc=com
+ou: Hosts
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Rpc,dc=example,dc=com
+ou: Rpc
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Services,dc=example,dc=com
+ou: Services
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Mounts,dc=example,dc=com
+ou: Mounts
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Networks,dc=example,dc=com
+ou: Networks
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=People,dc=example,dc=com
+ou: People
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Group,dc=example,dc=com
+ou: Group
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Netgroup,dc=example,dc=com
+ou: Netgroup
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Protocols,dc=example,dc=com
+ou: Protocols
+objectClass: top
+objectClass: organizationalUnit
+
+dn: ou=Aliases,dc=example,dc=com
+ou: Aliases
+objectClass: top
+objectClass: organizationalUnit
+
+dn: cn=localhost.localdomain,ou=Hosts,dc=example,dc=com
+objectClass: top
+objectClass: ipHost
+objectClass: device
+ipHostNumber: 127.0.0.1
+cn: localhost.localdomain
+cn: localhost
+
+dn: cn=LDAPAdmin,ou=People,dc=example,dc=com
+cn: LDAPAdmin
+objectClass: organizationalRole
+
+dn: cn=LDAPSync,ou=Hosts,dc=example,dc=com
+objectClass: person
+cn: LDAPSync
+sn: Internal
+userPassword: {SSHA}somepasswordsomepasswordsomepass
+pwdPolicySubentry: cn=noExpire_noLockout,ou=pwpolicies,dc=example,dc=com
+
+dn: cn=hostAuth,ou=Hosts,dc=example,dc=com
+objectClass: person
+cn: hostAuth
+sn: Internal
+userPassword: {SSHA}somepasswordsomepasswordsomepass
+pwdPolicySubentry: cn=noExpire_noLockout,ou=pwpolicies,dc=example,dc=com
+
+dn: cn=users,ou=Group,dc=example,dc=com
+objectClass: posixGroup
+objectClass: top
+cn: users
+gidNumber: 100
+
+dn: cn=administrators,ou=Group,dc=example,dc=com
+objectClass: posixGroup
+objectClass: top
+cn: administrators
+gidNumber: 700
+
+dn: ou=pwpolicies,dc=example,dc=com
+ou: pwpolicies
+objectClass: top
+objectClass: organizationalUnit
+
+# Some sane defaults
+dn: cn=default,ou=pwpolicies,dc=example,dc=com
+objectClass: top
+objectClass: device
+objectClass: pwdPolicy
+objectClass: pwdPolicyChecker
+cn: default
+pwdAttribute: userPassword
+pwdMinAge: 86400
+pwdMaxAge: 15552000
+pwdInHistory: 24
+pwdCheckQuality: 2
+pwdMinLength: 14
+pwdExpireWarning: 1209600
+pwdGraceAuthNLimit: -1
+pwdLockout: TRUE
+pwdLockoutDuration: 900
+pwdMaxFailure: 5
+pwdFailureCountInterval: 900
+pwdMustChange: TRUE
+pwdAllowUserChange: TRUE
+pwdSafeModify: FALSE
+pwdCheckModule: simp_check_password.so
+
+# This is for "special" accounts like hostAuth and LDAPSync
+dn: cn=noExpire_noLockout,ou=pwpolicies,dc=example,dc=com
+objectClass: top
+objectClass: device
+objectClass: pwdPolicy
+cn: noExpire_noLockout
+pwdAttribute: userPassword
+objectClass: pwdPolicyChecker
+pwdMinAge: 0
+pwdMaxAge: 0
+pwdInHistory: 24
+pwdCheckQuality: 2
+pwdMinLength: 14
+pwdExpireWarning: 0
+pwdGraceAuthNLimit: -1
+pwdLockout: FALSE
+pwdLockoutDuration: 900
+pwdMaxFailure: 5
+pwdFailureCountInterval: 900
+pwdMustChange: FALSE
+pwdAllowUserChange: FALSE
+pwdSafeModify: FALSE
+pwdCheckModule: simp_check_password.so

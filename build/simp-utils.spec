@@ -58,7 +58,9 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
-* Wed Sep 19 2018 Liz Nemsick <lnemsick.simp@gmail.com> - 6.1.2-0
+* Thu Sep 20 2018 Liz Nemsick <lnemsick.simp@gmail.com> - 6.1.2-0
+- Fixed bug in which updaterepos would fail when executed with Ruby 1.8.x
+  (e.g on CentOS 6 servers)
 - Fixed bug in which gen-ldap-update generated malformed ldif
   output when executed with Ruby 2.x (e.g on CentOS 7 servers)
 

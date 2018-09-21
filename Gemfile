@@ -12,11 +12,13 @@ group :test do
   gem 'mocha'
   gem 'simp-rake-helpers', ENV.fetch('SIMP_RAKE_HELPERS_VERSION', ['>= 5.2', '< 6.0'])
 
-  gem 'travis'
-  gem 'travis-lint'
-  gem 'travish'
-  gem 'puppet-blacksmith'
-  gem 'guard-rake'
   gem 'pry'
+  gem 'pry-byebug'
   gem 'pry-doc'
+end
+
+group :system_tests do
+  gem 'beaker'
+  gem 'beaker-rspec'
+  gem 'simp-beaker-helpers', ENV.fetch('SIMP_BEAKER_HELPERS_VERSION', ['>= 1.10.8', '< 2.0'])
 end

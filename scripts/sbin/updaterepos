@@ -75,12 +75,16 @@ Dir.chdir(tgt_dir) {
 
         File.umask(0022)
         %x{/usr/bin/createrepo -p --update .}
+        result = $?
         File.umask(0027)
 
         FileUtils.chown_R('root','apache', 'repodata')
-        FileUtils.chmod_R('g+srX','repodata')
+# TODO The line below does not work on Ruby 1.8 (CentOS6).  Re-enable
+#      it when we drop support for CentOS6.
+#        FileUtils.chmod_R('g+srX','repodata')
+       %x[/bin/chmod -R g+srX #{File.join(tgt_dir, dir, 'repodata')}]
 
-        if $? != 0 then
+        if result != 0 then
           $stderr.puts("Warning: There was an error running createrepo on #{tgt_dir}/#{dir}")
         end
       }

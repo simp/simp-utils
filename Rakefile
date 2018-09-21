@@ -6,9 +6,6 @@ require 'rake/packagetask'
 require 'simp/rake'
 require 'simp/rake/beaker'
 
-RSpec::Core::RakeTask.new(:spec)
-
-
 # coverage/ contains SimpleCov results
 CLEAN.include 'coverage'
 

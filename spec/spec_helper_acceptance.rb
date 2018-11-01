@@ -6,15 +6,25 @@ include Simp::BeakerHelpers
 
 unless ENV['BEAKER_provision'] == 'no'
   hosts.each do |host|
-    # Install Facter for beaker helpers (which uses 'facter' as
-    # part of the host setup) and some of the tests
-    host.install_package('rubygems')
-    on(host, 'gem install facter')
-    on(host, 'echo export PATH=$PATH:/usr/local/bin > /root/.bashrc')
+    # Install system ruby, as some of simp-utils scripts
+    # use system ruby
+    host.install_package('ruby')
+
+    # Install Puppet
+    # Acceptance tests need puppet in order to turn FIPS mode on
+    if host.is_pe?
+      install_pe
+    else
+      install_puppet
+    end
   end
 end
 
+
 RSpec.configure do |c|
+  # ensure that environment OS is ready on each host
+  fix_errata_on hosts
+
   # Readable test descriptions
   c.formatter = :documentation
 end

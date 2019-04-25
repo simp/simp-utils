@@ -13,51 +13,53 @@ function error_msg () {
 }
 
 function create_write_env () {
-  newenvdir="${1}/${2}"
+  local newenvdir="${1}/${2}"
 
   if [[ -d $newenvdir ]]; then
     error_msg "Writeable Environment Directory ${newenvdiri} already exists"
   fi
 
   mkdir $newenvdir
-  chown root:puppet $newenvdir
+  chown root:$puppet_group $newenvdir
   chmod 770 $newenvdir
 
 }
 
 function create_secondary_env () {
-  olddir=$(pwd)
-  envdir=$1
-  skeldir=$2
-  rsyncskeldir=$3
+  local olddir=$(pwd)
+  local envdir=$1
+  local skeldir=$2
+  local rsyncskeldir=$3
+
   if [[ -d $envdir ]]; then
     error_msg "Can not create new environment ${env2}, it already exists"
   fi
   mkdir $envdir
-  chown root:$puppet_group $envdir
-  chmod 750 $envdir
+  chmod 755 $envdir
 
   # create Fake ca and key dirs
   rsync -a "${skeldir}/" $envdir
   dd if=/dev/urandom count=24 bs=1 status=none | openssl enc -a -out "${envdir}/FakeCA/cacertkey"
   #copy rsync files
   rsync -a $rsyncskeldir $envdir
+
+  # make sure selinux contexts are good
+  fixfiles restore $envdir
+  # make sure permissions and acls are correct
   cd ${envdir}/rsync
   if [[ -f  .rsync.facl ]]; then
     setfacl --restore=.rsync.facl
   else
     echo "Could not find rsync ACL file.  Permissions on rsync directory may not be correct"
   fi
-  # make sure selinux contexts are good
-  fixfiles restore $envdir
   cd $olddir
 }
 
 function copy_or_link_env () {
-  basedir=$1
-  newenv=$2
-  oldenv=$3
-  operation=$4
+  local basedir=$1
+  local newenv=$2
+  local oldenv=$3
+  local operation=$4
   if [[ ! -d "${basedir}/${oldenv}" ]]; then
     error_msg "Old environment ${basedir}/${oldenv} does not exist."
   fi
@@ -96,10 +98,10 @@ function list_env_dirs () {
 }
 
 function create_puppet_env () {
-  curdir=$(pwd)
-  newenv=$1
-  puppetdir=$2
-  pupskeldir=$3
+  local curdir=$(pwd)
+  local newenv=$1
+  local puppetdir=$2
+  local pupskeldir=$3
 
   newenvdir="${puppetdir}/${newenv}"
 
@@ -114,8 +116,10 @@ function create_puppet_env () {
   mkdir $newenvdir
   rsync -a "${pupskeldir}/" $newenvdir
   cat > ${newenvdir}/environment.conf <<ENVCONF
+#Do not remove \$basemodulepath from this.
+
 modulepath = modules:/var/simp/environments/${newenv}/site_files:\$basemodulepath
-environemnt_timeout = 0
+environment_timeout = 0
 ENVCONF
   if [[ ! -f Puppetfile ]]; then
     simp puppetfile generate --skeleton > "${newenvdir}/Puppetfile"

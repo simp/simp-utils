@@ -18,10 +18,10 @@ function create_write_env () {
   if [[ -d $newenvdir ]]; then
     error_msg "Writeable Environment Directory ${newenvdiri} already exists"
   fi
-
   mkdir $newenvdir
-  chown root:$puppet_group $newenvdir
-  chmod 770 $newenvdir
+  rsync -a $SKELBASE/writeable/  $newenvdir
+  chown -R $PUPPET_USER:$PUPPET_GROUP $newenvdir
+  chmod -R g+rwX $newenvdir
 
 }
 
@@ -35,7 +35,6 @@ function create_secondary_env () {
     error_msg "Can not create new environment ${env2}, it already exists"
   fi
   mkdir $envdir
-  chmod 755 $envdir
 
   # create Fake ca and key dirs
   rsync -a "${skeldir}/" $envdir
@@ -52,6 +51,7 @@ function create_secondary_env () {
   else
     echo "Could not find rsync ACL file.  Permissions on rsync directory may not be correct"
   fi
+  chmod 755 $envdir
   cd $olddir
 }
 
@@ -127,7 +127,7 @@ ENVCONF
   if [[ ! -f Puppetfile.simp ]]; then
     simp puppetfile generate > "${newenvdir}/Puppetfile.simp"
   fi
-  chown -R root:$puppet_group $newenvdir
+  chown -R root:$PUPPET_GROUP $newenvdir
   chmod -R g+rX $newenvdir
   cd $curdir
 }
@@ -183,8 +183,13 @@ oldenv=''
 newenv=''
 
 # Set puppet group and user.
-puppet_user=$(puppet config print user 2> /dev/null)
-puppet_group=$(puppet config print group 2> /dev/null)
+PUPPET_USER=$(puppet config print user 2> /dev/null)
+PUPPET_GROUP=$(puppet config print group 2> /dev/null)
+
+if [[ -z $PUPPET_USER ]] || [[ -z $PUPPET_GROUP ]]; then
+  error_msg "Unable to determine puppet user, ${PUPPET_USER}, or puppet group, ${PUPPET_GROUP}"
+fi
+
 #Check that all our base dirs and skeletons exist
 for dir in $SKELDIR $PUPENVDIR $RSYNCSKELDIR $SECSKELDIR $WRITEBASE $ENV2DIR
 do
@@ -198,8 +203,8 @@ if [[ ! -d $ENV3DIR ]]; then
   mkdir -p $ENV3DIR
   chmod 750 "${WRITEBASE}/simp"
   chmod 750 "${WRITEBASE}/simp/environments"
-  chown  $puppet_user:$puppet_group "${WRITEBASE}/simp"
-  chown  $puppet_user:$puppet_group "${WRITEBASE}/simp/environments"
+  chown  $PUPPET_USER:$PUPPET_GROUP "${WRITEBASE}/simp"
+  chown  $PUPPET_USER:$PUPPET_GROUP "${WRITEBASE}/simp/environments"
 fi
 
 ## get arguments

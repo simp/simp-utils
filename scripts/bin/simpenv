@@ -19,10 +19,9 @@ function create_write_env () {
     error_msg "Writeable Environment Directory ${newenvdiri} already exists"
   fi
   mkdir $newenvdir
-  rsync -a $SKELBASE/writeable/  $newenvdir
+  rsync -a "${WRITESKELDIR}/"  $newenvdir
   chown -R $PUPPET_USER:$PUPPET_GROUP $newenvdir
   chmod -R g+rwX $newenvdir
-
 }
 
 function create_secondary_env () {
@@ -43,7 +42,7 @@ function create_secondary_env () {
   rsync -a $rsyncskeldir $envdir
 
   # make sure selinux contexts are good
-  fixfiles restore $envdir
+  restorecon -R $envdir
   # make sure permissions and acls are correct
   cd ${envdir}/rsync
   if [[ -f  .rsync.facl ]]; then
@@ -157,12 +156,15 @@ Usage:  This script will create the SIMP environment for a new environment.
     -a create each part using a different method
        simpenv -a PUPPET SECONDARY WRITEABLE EXISTING_ENV NEWENV
 
-         For example if you want to create the Puppet and Secondary environemnt but link
+         For example if you want to create the Puppet and Secondary environment but link
          the Writable environment:
          simpenv -d new new link  myexistingenv mynewenv
 
     NOTE:  To complete the installation of the environment you must run r10k to install
-    the install the puppet modules in the new environment.
+    the puppet modules in the new environment.  If there is no Puppetfile in the
+    new environment, one will be created using simp generate command from the
+    latest versions currently installed under/usr/share/simp.
+
 EOU
 # This is here so the script will exit after the usage statement is printed
 error_msg "Usage Printed"
@@ -172,6 +174,7 @@ error_msg "Usage Printed"
 SKELBASE=/usr/share/simp/environments
 SKELDIR="${SKELBASE}/simp"
 SECSKELDIR="${SKELBASE}/secondary"
+WRITESKELDIR="${SKELBASE}/writable"
 RSYNCSKELDIR="${SKELBASE}/rsync"
 PUPENVDIR=$(puppet config print environmentpath 2> /dev/null)
 ENV2DIR="/var/simp/environments"

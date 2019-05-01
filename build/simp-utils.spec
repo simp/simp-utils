@@ -1,6 +1,6 @@
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.1.3
+Version: 6.2.0
 Release: 0
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -59,9 +59,10 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
-* Thu Apr 25 2019 Jeanne Greulich <jeanne.greulich@onyxpoint.com> - 6.1.3-0
-- added simpenv script which creates SIMP environments for SIMP 6.4
+* Thu Apr 25 2019 Jeanne Greulich <jeanne.greulich@onyxpoint.com> - 6.2.0-0
+- Added simpenv script which creates SIMP environments for SIMP 6.4
   or later.
+
 * Thu Sep 20 2018 Liz Nemsick <lnemsick.simp@gmail.com> - 6.1.2-0
 - Fixed bug in which updaterepos would fail when executed with Ruby 1.8.x
   (e.g on CentOS 6 servers)

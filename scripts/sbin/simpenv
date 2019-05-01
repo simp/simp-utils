@@ -11,10 +11,10 @@ function error_msg () {
 
 function create_write_env () {
   local newenvdir="${1}/${2}"
-  echo "Creating Writeable env dir ${newenvdir}"
+  echo "Creating Writable env dir ${newenvdir}"
 
   if [[ -d $newenvdir ]]; then
-    error_msg "Writeable env dir ${newenvdir} already exists"
+    error_msg "Writable env dir ${newenvdir} already exists"
   fi
   mkdir $newenvdir
   rsync -a "${WRITESKELDIR}/"  $newenvdir
@@ -91,7 +91,7 @@ function list_env_dirs () {
   echo "-----------------------------------------------------------------------"
   echo " "
   echo "-----------------------------------------------------------------------"
-  echo "--- Writeable Environment: ${ENV3DIR} --------------"
+  echo "--- Writable Environment: ${ENV3DIR} --------------"
   echo 
   ls -la $ENV3DIR
   echo "-----------------------------------------------------------------------"
@@ -149,7 +149,7 @@ Usage:  This script will create the SIMP environment for a new environment.
   for information the various parts of an environment.
 
   There are three parts of the  SIMP environment, Puppet, Secondary, and
-  Writeable environments, and they can individually be either:
+  Writable environments, and they can individually be either:
     - created from skeletons provided by SIMP components
     - linked to an existing environment
     - copied from an existing environment
@@ -351,7 +351,7 @@ case $secop in
     ;;
 esac
 
-# Perform Ops on Writeable environment
+# Perform Ops on Writable environment
 basedir=$ENV3DIR
 case $writeop in
   new )

@@ -43,11 +43,11 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 
 %files
 %defattr(-,root,root)
-/usr/local/bin/unpack_dvd
 /usr/local/bin/set_environment
-/usr/local/bin/simpenv
-/usr/local/sbin/puppetlast
+/usr/local/bin/unpack_dvd
 /usr/local/sbin/gen-ldap-update
+/usr/local/sbin/puppetlast
+/usr/local/sbin/simpenv
 /usr/local/sbin/updaterepos
 /usr/share/simp
 %attr(0750,root,root) /usr/share/simp/upgrade_scripts

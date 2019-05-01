@@ -3,20 +3,18 @@
 #  This script is used to create an environment for SIMP 6.4 or later.
 #  See ./simpenv --help for more information.
 #
-trap "exit 1" TERM
-export TOP_PID=$$
 
 function error_msg () {
-#  printf "$1"
-  echo "$1"
-  kill -s TERM $TOP_PID
+  echo "ERROR: $1"
+  exit 1
 }
 
 function create_write_env () {
   local newenvdir="${1}/${2}"
+  echo "Creating Writeable env dir ${newenvdir}"
 
   if [[ -d $newenvdir ]]; then
-    error_msg "Writeable Environment Directory ${newenvdiri} already exists"
+    error_msg "Writeable env dir ${newenvdir} already exists"
   fi
   mkdir $newenvdir
   rsync -a "${WRITESKELDIR}/"  $newenvdir
@@ -29,16 +27,17 @@ function create_secondary_env () {
   local envdir=$1
   local skeldir=$2
   local rsyncskeldir=$3
+  echo "Creating Secondary env dir ${envdir}"
 
   if [[ -d $envdir ]]; then
-    error_msg "Can not create new environment ${env2}, it already exists"
+    error_msg "Secondary env dir ${envdir} already exists"
   fi
   mkdir $envdir
 
-  # create Fake ca and key dirs
+  # create Fake CA and key dirs
   rsync -a "${skeldir}/" $envdir
   dd if=/dev/urandom count=24 bs=1 status=none | openssl enc -a -out "${envdir}/FakeCA/cacertkey"
-  #copy rsync files
+  # copy simp-rsync files
   rsync -a $rsyncskeldir $envdir
 
   # make sure selinux contexts are good
@@ -67,9 +66,11 @@ function copy_or_link_env () {
   fi
   case $operation in
     link )
+      echo "Linking ${basedir}/${newenv} to ${basedir}/${oldenv}"
       ln -s "${basedir}/${oldenv}" "${basedir}/${newenv}"
       ;;
     copy )
+      echo "Copying ${basedir}/${oldenv} to ${basedir}/${newenv}"
       rsync -a "${basedir}/${oldenv}" "${basedir}/${newenv}"
       ;;
     * )
@@ -103,13 +104,14 @@ function create_puppet_env () {
   local pupskeldir=$3
 
   newenvdir="${puppetdir}/${newenv}"
+  echo "Creating Puppet env dir ${newenvdir} from ${pupskeldir}"
 
   if [[ -d "${newenvdir}" ]]; then
-    error_msg "${newenvdir} already exists"
+    error_msg "Puppet environment ${newenvdir} already exists"
   fi
 
   if [[ ! -d $pupskeldir ]]; then
-    error_msg "Puppet Environment Skeleton Dir, ${pupskeldir}, does not exist"
+    error_msg "Puppet environment skeleton dir, ${pupskeldir}, does not exist"
   fi
 
   mkdir $newenvdir
@@ -121,10 +123,18 @@ modulepath = modules:/var/simp/environments/${newenv}/site_files:\$basemodulepat
 environment_timeout = 0
 ENVCONF
   if [[ ! -f Puppetfile ]]; then
-    simp puppetfile generate --skeleton > "${newenvdir}/Puppetfile"
+    if [[ -x /bin/simp ]]; then
+      simp puppetfile generate --skeleton > "${newenvdir}/Puppetfile"
+    else
+      error_msg "Unable to generate Puppetfile: rubygem-simp-cli package is not installed"
+    fi
   fi
   if [[ ! -f Puppetfile.simp ]]; then
-    simp puppetfile generate > "${newenvdir}/Puppetfile.simp"
+    if [[ -x /bin/simp ]]; then
+      simp puppetfile generate > "${newenvdir}/Puppetfile.simp"
+    else
+      error_msg "Unable to generate Puppetfile.simp: rubygem-simp-cli package is not installed"
+    fi
   fi
   chown -R root:$PUPPET_GROUP $newenvdir
   chmod -R g+rX $newenvdir
@@ -136,39 +146,50 @@ function usage () {
 cat <<EOU
 Usage:  This script will create the SIMP environment for a new environment.
   See:  https://simp-project.atlassian.net/wiki/spaces/SD/pages/760840207/Environments
-  for information the various parts of an enviroment.
+  for information the various parts of an environment.
 
-  There are three parts of the  SIMP environment,
-  Puppet, Secondary, and Writeable environments, and they can individually
-  be either:
-    - created new from skeletons provided by the simp modules,
+  There are three parts of the  SIMP environment, Puppet, Secondary, and
+  Writeable environments, and they can individually be either:
+    - created from skeletons provided by SIMP components
     - linked to an existing environment
     - copied from an existing environment
 
-  simpenv -n|-c|-l|-d [new|copy|link] [EXISTING_ENV] NEWENV
+  simpenv -h
+  simpenv --list
+  simpenv -n|-c|-l|-a [new|copy|link] [EXISTING_ENV] NEWENV
     -n create all parts from the skeleton
          simpenv -n NEWENV
-    -l link both parts of the SIMP Extra Environment to an existing environemtn
-       and create the Puppet Environment from the environment that was linked.
-        simpenv -l EXISTING_ENV NEWENV
-    -c copy both parts from an existing environment
+
+    -l link both parts of the SIMP Extra Environment to an existing environment
+       and copy the Puppet Environment from the existing environment
+         simpenv -l EXISTING_ENV NEWENV
+
+    -c copy all parts from an existing environment
         simpenv -c EXISTING_ENV NEWENV
-    -a create each part using a different method
-       simpenv -a PUPPET SECONDARY WRITEABLE EXISTING_ENV NEWENV
 
-         For example if you want to create the Puppet and Secondary environment but link
-         the Writable environment:
-         simpenv -d new new link  myexistingenv mynewenv
+    -a create each part using a different method (new, copy, link);
+       link is not an option for the Puppet environment
+         simpenv -a PUPPET SECONDARY WRITEABLE EXISTING_ENV NEWENV
 
-    NOTE:  To complete the installation of the environment you must run r10k to install
-    the puppet modules in the new environment.  If there is no Puppetfile in the
-    new environment, one will be created using simp generate command from the
-    latest versions currently installed under/usr/share/simp.
+         For example if you want to create the Puppet and Secondary environment
+         but link the Writable environment:
+           simpenv -a new new link  myexistingenv mynewenv
+
+    NOTE:  To complete the installation of the environment you must run r10k
+    to install the Puppet modules in the new environment.  If there is no
+    Puppetfile in the new environment, one will be created containing the
+    latest SIMP Puppet module versions currently installed under
+    /usr/share/simp, using the 'simp puppetfile generate' command.  The 
+    'simp' command is provided by the rubygem-simp-cli package.
 
 EOU
-# This is here so the script will exit after the usage statement is printed
-error_msg "Usage Printed"
 }
+
+function bad_usage () {
+  usage
+  exit 1
+}
+
 
 ### Main Program ###
 SKELBASE=/usr/share/simp/environments
@@ -194,14 +215,15 @@ if [[ -z $PUPPET_USER ]] || [[ -z $PUPPET_GROUP ]]; then
 fi
 
 #Check that all our base dirs and skeletons exist
-for dir in $SKELDIR $PUPENVDIR $RSYNCSKELDIR $SECSKELDIR $WRITEBASE $ENV2DIR
+for dir in $SKELDIR $PUPENVDIR $RSYNCSKELDIR $SECSKELDIR $WRITEBASE $WRITESKELDIR $ENV2DIR
 do
   if [[  ! -d $dir  || -z $dir  ]]; then
     error_msg "Verification of skeleton directories failed.  Directory, ${dir}, does not exist.  Cannot continue"
   fi
 done
 
-# Check that simp directories exist and if not create them
+# Check that the parent directory tree for the SIMP writable environments
+# exists, and if not create it
 if [[ ! -d $ENV3DIR ]]; then
   mkdir -p $ENV3DIR
   chmod 750 "${WRITEBASE}/simp"
@@ -214,7 +236,7 @@ fi
 case $1 in
   -n )
     if [[ $# -lt 2 ]]; then
-      usage;
+      bad_usage;
     fi
     shift
     newenv=$1
@@ -224,7 +246,7 @@ case $1 in
     ;;
   -l | -c )
     if [[ $# -lt 3 ]]; then
-      usage;
+      bad_usage;
     fi
     # Always copy the puppet environment
     pupenvop='copy'
@@ -243,7 +265,7 @@ case $1 in
     ;;
   -a )
     if [[ $# -lt 5 ]]; then
-      usage
+      bad_usage
     fi
     shift
     case $1 in
@@ -251,7 +273,7 @@ case $1 in
         pupenvop=$1
         ;;
       * )
-        usage
+        bad_usage
         ;;
     esac
     shift
@@ -260,7 +282,7 @@ case $1 in
         secop=$1
         ;;
       * )
-        usage
+        bad_usage
         ;;
     esac
     shift
@@ -269,7 +291,7 @@ case $1 in
         writeop=$1
         ;;
       * )
-        usage
+        bad_usage
         ;;
     esac
     shift
@@ -283,15 +305,16 @@ case $1 in
     ;;
   -h | --help)
     usage
+    exit 0
     ;;
   * )
-    usage
+    bad_usage
     ;;
 esac
 
 # Make sure a new environment was passed
 if [[ -z $newenv ]]; then
-  error_msg "No new existing environment name was provided"
+  error_msg "Did not specify new existing environment name"
 fi
 
 basedir=$PUPENVDIR
@@ -301,9 +324,9 @@ case $pupenvop in
     ;;
   copy)
     if [[ -z $oldenv ]]; then
-      error_msg "No existing environment was provided to copy from"
+      error_msg "Did not specify copy environment name"
     fi
-    create_puppet_env $newenv $basedir "${basedir}/${olddir}"
+    create_puppet_env $newenv $basedir "${basedir}/${oldenv}"
     ;;
   *)
     error_msg "Invalid operation, ${pupenvop}, for ${basedir} environment"
@@ -318,8 +341,8 @@ case $secop in
     create_secondary_env $newenvdir $SECSKELDIR $RSYNCSKELDIR
     ;;
   link|copy )
-    if [[ -z $olddir ]]; then
-      error_msg "No  existing environment was provided to copy from"
+    if [[ -z $oldenv ]]; then
+      error_msg "Did not specify link|copy environment name"
     fi
     copy_or_link_env $basedir $newenv $oldenv $secop
     ;;
@@ -336,7 +359,7 @@ case $writeop in
     ;;
   link|copy )
     if [[ -z $oldenv ]]; then
-      error_msg "No existing environment was provided to copy from"
+      error_msg "Did not specify link|copy environment name"
     fi
     copy_or_link_env $basedir $newenv $oldenv $writeop
     ;;

@@ -215,14 +215,14 @@ if [[ -z $PUPPET_USER ]] || [[ -z $PUPPET_GROUP ]]; then
 fi
 
 #Check that all our base dirs and skeletons exist
-for dir in $SKELDIR $PUPENVDIR $RSYNCSKELDIR $SECSKELDIR $WRITEBASE $WRITESKELDIR $ENV2DIR
+for dir in $SKELDIR $PUPENVDIR $RSYNCSKELDIR $SECSKELDIR $WRITEBASE $WRITESKELDIR
 do
   if [[  ! -d $dir  || -z $dir  ]]; then
     error_msg "Verification of skeleton directories failed.  Directory, ${dir}, does not exist.  Cannot continue"
   fi
 done
 
-# Check that the parent directory tree for the SIMP writable environments
+# Check that the parent directory tree for the SIMP secondary and writable environments
 # exists, and if not create it
 if [[ ! -d $ENV3DIR ]]; then
   mkdir -p $ENV3DIR
@@ -232,6 +232,11 @@ if [[ ! -d $ENV3DIR ]]; then
   chown  $PUPPET_USER:$PUPPET_GROUP "${WRITEBASE}/simp/environments"
 fi
 
+if [[ ! -d $ENV2DIR ]]; then
+  mkdir -p $ENV2DIR
+  chown root:root $ENV2DIR
+  chmod 755 $ENV2DIR
+fi
 ## get arguments
 case $1 in
   -n )

@@ -36,12 +36,24 @@ function create_secondary_env () {
 
   # create Fake CA and key dirs
   rsync -a "${skeldir}/" $envdir
+
+  #make sure cacertkey has randon data
   dd if=/dev/urandom count=24 bs=1 status=none | openssl enc -a -out "${envdir}/FakeCA/cacertkey"
+
+  # Make sure the permissions and owners are correct.
+  puppet_user=$(puppet config print user 2>.dev.null)
+  puppet_group=$(puppet config print group 2>.dev.null)
+  chmod 755 $envdir 
+  chgrp -R $puppet_group $envdir/site_files
+  chmod -R g+rX  $envdir/site_files
+  chmod -R o-rwX $envdir/site_files
+  chmod 750 $envdir/FakeCA
+
   # copy simp-rsync files
   rsync -a $rsyncskeldir $envdir
 
   # make sure selinux contexts are good
-  restorecon -R $envdir
+  fixfiles -F restore $envdir
   # make sure permissions and acls are correct
   cd ${envdir}/rsync
   if [[ -f  .rsync.facl ]]; then
@@ -92,7 +104,7 @@ function list_env_dirs () {
   echo " "
   echo "-----------------------------------------------------------------------"
   echo "--- Writable Environment: ${ENV3DIR} --------------"
-  echo 
+  echo
   ls -la $ENV3DIR
   echo "-----------------------------------------------------------------------"
 }
@@ -179,7 +191,7 @@ Usage:  This script will create the SIMP environment for a new environment.
     to install the Puppet modules in the new environment.  If there is no
     Puppetfile in the new environment, one will be created containing the
     latest SIMP Puppet module versions currently installed under
-    /usr/share/simp, using the 'simp puppetfile generate' command.  The 
+    /usr/share/simp, using the 'simp puppetfile generate' command.  The
     'simp' command is provided by the rubygem-simp-cli package.
 
 EOU

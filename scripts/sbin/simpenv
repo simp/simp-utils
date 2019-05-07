@@ -235,7 +235,7 @@ do
 done
 
 # Check that the parent directory tree for the SIMP secondary and writable environments
-# exists, and if not create it
+# exist, and if not create them
 if [[ ! -d $ENV3DIR ]]; then
   mkdir -p $ENV3DIR
   chmod 750 "${WRITEBASE}/simp"

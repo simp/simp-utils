@@ -37,7 +37,7 @@ function create_secondary_env () {
   # create Fake CA and key dirs
   rsync -a "${skeldir}/" $envdir
 
-  #make sure cacertkey has randon data
+  #make sure cacertkey has random data
   dd if=/dev/urandom count=24 bs=1 status=none | openssl enc -a -out "${envdir}/FakeCA/cacertkey"
 
   # Make sure the permissions and owners are correct.

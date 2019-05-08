@@ -59,7 +59,7 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
-* Thu Apr 25 2019 Jeanne Greulich <jeanne.greulich@onyxpoint.com> - 6.2.0-0
+* Thu May 02 2019 Jeanne Greulich <jeanne.greulich@onyxpoint.com> - 6.2.0-0
 - Added simpenv script which creates SIMP environments for SIMP 6.4
   or later.
 

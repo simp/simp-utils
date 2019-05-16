@@ -135,14 +135,14 @@ modulepath = modules:/var/simp/environments/${newenv}/site_files:\$basemodulepat
 environment_timeout = 0
 ENVCONF
   if [[ ! -f Puppetfile ]]; then
-    if [[ -x /bin/simp ]]; then
+    if [[ -x /bin/simp  || -x /usr/bin/simp ]]; then
       simp puppetfile generate --skeleton > "${newenvdir}/Puppetfile"
     else
       error_msg "Unable to generate Puppetfile: rubygem-simp-cli package is not installed"
     fi
   fi
   if [[ ! -f Puppetfile.simp ]]; then
-    if [[ -x /bin/simp ]]; then
+    if [[ -x /bin/simp  || -x /usr/bin/simp ]]; then
       simp puppetfile generate > "${newenvdir}/Puppetfile.simp"
     else
       error_msg "Unable to generate Puppetfile.simp: rubygem-simp-cli package is not installed"

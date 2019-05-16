@@ -1,6 +1,6 @@
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.2.0
+Version: 6.2.1
 Release: 0
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -59,6 +59,9 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Thu May 16 2019 Jeanne Greulich <jeanne.greulich@onyxpoint.com> - 6.2.1-0
+- Fixed error so simpenv script  would work on EL6 also.
+
 * Thu May 02 2019 Jeanne Greulich <jeanne.greulich@onyxpoint.com> - 6.2.0-0
 - Added simpenv script which creates SIMP environments for SIMP 6.4
   or later.

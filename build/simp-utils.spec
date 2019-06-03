@@ -1,6 +1,6 @@
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.2.1
+Version: 6.2.2
 Release: 0
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -59,6 +59,11 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Mon Jun 03 2019 Liz Nemsick <lnemsick.simp@gmail.com> - 6.2.2-0
+- Update the path of SIMP's Puppet skeleton to
+  /usr/share/simp/environment-skeleton/puppet. This is the correct
+  path for simp-environment-skeleton >= 7.1.0.
+
 * Thu May 16 2019 Jeanne Greulich <jeanne.greulich@onyxpoint.com> - 6.2.1-0
 - Fixed error so simpenv script  would work on EL6 also.
 

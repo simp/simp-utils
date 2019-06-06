@@ -205,7 +205,7 @@ function bad_usage () {
 
 ### Main Program ###
 SKELBASE=/usr/share/simp/environment-skeleton
-SKELDIR="${SKELBASE}/simp"
+SKELDIR="${SKELBASE}/puppet"
 SECSKELDIR="${SKELBASE}/secondary"
 WRITESKELDIR="${SKELBASE}/writable"
 RSYNCSKELDIR="${SKELBASE}/rsync"

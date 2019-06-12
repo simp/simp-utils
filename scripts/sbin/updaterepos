@@ -78,11 +78,11 @@ Dir.chdir(tgt_dir) {
         result = $?
         File.umask(0027)
 
-        FileUtils.chown_R('root','apache', 'repodata')
+        FileUtils.chown_R('root','apache', Dir.pwd)
 # TODO The line below does not work on Ruby 1.8 (CentOS6).  Re-enable
 #      it when we drop support for CentOS6.
-#        FileUtils.chmod_R('g+srX','repodata')
-       %x[/bin/chmod -R g+srX #{File.join(tgt_dir, dir, 'repodata')}]
+#        FileUtils.chmod_R('g+srX', Dir.pwd)
+       %x[/bin/chmod -R g+srX #{File.join(tgt_dir, dir)}]
 
         if result != 0 then
           $stderr.puts("Warning: There was an error running createrepo on #{tgt_dir}/#{dir}")

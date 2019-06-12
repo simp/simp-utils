@@ -1,13 +1,13 @@
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.2.2
+Version: 6.2.3
 Release: 0
 License: Apache License, Version 2.0
 Group: Applications/System
 Source: %{name}-%{version}-%{release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Requires: puppet-agent >= 1.0.0
-Requires: mkisofs
+Requires: genisoimage
 Requires: rpm
 Requires: yum
 Requires: yum-utils
@@ -59,6 +59,19 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Wed Jun 12 2019 Jeanne Greulich <jeanne.greulich@onyxpoint.com> - 6.2.3-0
+- Update unpack_dvd script
+  - made sure permissions on all directories containing RPMs for the
+    repo had correct permissions.
+  - Only attempt to change ownership of files if run as root.
+  - put `noarch` rpms under noarch directry for SIMP repo.
+  - Allow user to specify version directory for OS because CentOS
+    .treeinfo file only contains Major Version number.
+  - Add optin to allow user to not link the extracted files to the
+    major version.
+  - added option to change what group was used to owned the files.
+- Updated the README
+
 * Mon Jun 03 2019 Liz Nemsick <lnemsick.simp@gmail.com> - 6.2.2-0
 - Update the path of SIMP's Puppet skeleton to
   /usr/share/simp/environment-skeleton/puppet. This is the correct

@@ -7,6 +7,19 @@
 # It uses the 'isoinfo' utility to pull files off of the DVD so no root access
 # is requried for locally unpacking an ISO.
 #
+#  It uses the .treeinfo file to determine the OS family, version and arch
+#  and creates this OS directory (ie  RedHat/7.5/x86_64) and  a `SIMP` directory
+#  under the specified directory.
+#
+#  Any files under SIMP directory on the ISO are unpacked to the SIMP directory and
+#  all otheres under the OS directory
+#
+#  The OS repo will be created under an Updates directory.  Any RPM files found under
+#  any directory unpacked under the OS directory will be linked and included in the repo.
+#
+#  The ownership of the files is changed to root:apache if the script is run
+#  as root.
+#
 
 require 'rubygems'
 require 'optparse'
@@ -54,7 +67,9 @@ class ProgressBar
   end
 end
 
-def update_yum_repo(repo)
+def update_yum_repo(repo, group)
+  repo_dirs = [ repo ]
+
   puts "Updating repo at #{repo}"
   FileUtils.mkdir_p(repo,{:mode => 0755})
   Dir.chdir(repo) do
@@ -62,7 +77,9 @@ def update_yum_repo(repo)
       Find.prune if File.basename(path) == File.basename(repo)
 
       if File.basename(path) =~ /.*\.rpm/ and not File.symlink?(File.basename(path)) then
+        full_path = File.dirname(File.expand_path(path))
         FileUtils.ln_sf(path,File.basename(path))
+        repo_dirs << full_path unless repo_dirs.include?(full_path)
       end
     end
 
@@ -93,29 +110,46 @@ def update_yum_repo(repo)
     end
   end
 
-  begin
-    FileUtils.chown_R('root','apache',repo)
-  rescue Exception => e
-    $stderr.puts("Warning: Could not change permissions on #{repo} to 'root:apache'.")
-    $stderr.puts(e)
-  end
-
   if Process.uid == 0
-    begin
-      if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('1.9')
-        # Use Puppet to hack around the lack of symbolic modes in Ruby < 1.9
-        system(%{puppet resource file #{repo} recurse=true mode='g+srX' 2>&1 > /dev/null})
-      else
-        FileUtils.chmod_R('g+srX',repo)
+    repo_dirs.each  { |dir|
+      begin
+          FileUtils.chown_R('root',"#{group}", dir)
+      rescue Exception => e
+        $stderr.puts("Warning: Could not change permissions on #{dir} to root:#{group}.")
+        $stderr.puts(e)
       end
-    rescue Exception => e
-      $stderr.puts("Warning: Could not change permissions on #{repo} to 'g+srX'.")
-      $stderr.puts(e)
-    end
+
+      begin
+        if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('1.9')
+          # Use Puppet to hack around the lack of symbolic modes in Ruby < 1.9
+          system(%{puppet resource file #{dir} recurse=true mode='g+rX' 2>&1 > /dev/null})
+        else
+          FileUtils.chmod_R('g+rX',dir)
+        end
+      rescue Exception => e
+        $stderr.puts("Warning: Could not change permissions on #{dir} to 'g+rX'.")
+        $stderr.puts(e)
+      end
+      begin
+        if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('1.9')
+          system(%{puppet resource file #{dir} mode='g+s' 2>&1 > /dev/null})
+        else
+          FileUtils.chmod('g+s',dir)
+        end
+      rescue Exception => e
+        $stderr.puts("Warning: Could iset group id permission on  #{dir}  'g+s'.")
+        $stderr.puts(e)
+      end
+    }
   end
 end
 
 options = Hash.new
+# Set defaults
+options[:link] = true
+options[:group] = 'apache'
+
+# Get command line options
 opts = OptionParser.new do |opts|
   opts.banner = "Usage: #{$0} [options] /path/to/dvd/to/unpack"
 
@@ -129,6 +163,29 @@ opts = OptionParser.new do |opts|
     "  The directory structure <OS>/<version>/<arch>",
     "  will be created under here.") do |dest|
     options[:dest] = dest.chomp
+  end
+
+  opts.on("-v", "--version VERSION", "Over ride for the version in the .treeinfo file on the DVD.",
+    "  The CentOS DVDs often only have the major version and will over write",
+    "  what is in the existing major version directory.",
+    "  By default this directory will be linked to the major version directory."
+
+    ) do |version|
+    options[:version] = version.chomp
+  end
+
+  opts.on("-n", "--nolink", "Do not Link the installed OS version to the major version",
+    "  By default it will link this newly installed DVD to the major version",
+    "  If you do not want this to happen use the -n option."
+    ) do |n|
+    options[:link] = false
+  end
+
+  opts.on("-g", "--group GROUP", "Change the group who will own the extracted files.",
+    "  Default group is apache",
+    "  Note: It does not check if the group exists at this time"
+    ) do |group|
+    options[:group] = group
   end
 
   opts.on("-h", "--help", "Output a useful help message") do
@@ -146,6 +203,10 @@ if not ARGV.length > 0 then
 end
 fail("Could not find a SIMP default output directory and no --dest option provided") unless options[:dest]
 fail("Destination directory does not exist") if not File.directory?(options[:dest])
+
+# Set nice names for options
+create_maj_version_link = options[:link]
+
 
 discattrs = {
   :family => nil,
@@ -194,6 +255,10 @@ discattrs.each_pair do |k,v|
   end
 end
 
+# Use the version in .treeinfo if no version has been specified"
+versiondir = options[:version] || discattrs[:version]
+
+
 puts "Starting to unpack #{discattrs[:path]}:"
 
 iso_list = %x{#{isoinfo} -Rl}.split("\n")
@@ -220,14 +285,18 @@ iso_toc = iso_toc - kill_dirs
 progress = ProgressBar.new(iso_toc.size)
 
 
-destdir = "#{options[:dest]}/#{discattrs[:family]}/#{discattrs[:version]}/#{discattrs[:arch]}/"
+destdir = "#{options[:dest]}/#{discattrs[:family]}/#{versiondir}/#{discattrs[:arch]}/"
 simpdir = "#{options[:dest]}/SIMP/#{discattrs[:arch]}/"
+simpdir_noarch = "#{options[:dest]}/SIMP/noarch/"
 
 iso_toc.each do |iso_entry|
   if iso_entry =~ /^\/SIMP/
-    target = "#{simpdir}#{File.basename(iso_entry)}"
+    if iso_entry =~ /noarch.rpm$/
+      target = "#{simpdir_noarch}#{File.basename(iso_entry)}"
+    else
+      target = "#{simpdir}#{File.basename(iso_entry)}"
+    end
   else
-
     target = "#{destdir}#{iso_entry}"
   end
   begin
@@ -243,18 +312,20 @@ iso_toc.each do |iso_entry|
 end
 
 puts "Unpacking complete, updating yum repositories...."
-update_yum_repo("#{destdir}/Updates")
-update_yum_repo(simpdir) unless (simpdir == destdir)
+update_yum_repo("#{destdir}/Updates", "#{options[:group]}")
+update_yum_repo(simpdir, "#{options[:group]}") unless (simpdir == destdir)
 puts "Repo creation complete"
 
-Dir.chdir("#{options[:dest]}/#{discattrs[:family]}") do
-  base_ver = discattrs[:version].split('.').first
-  if base_ver != discattrs[:version] then
-    from = discattrs[:version]
-    to = base_ver
-    puts "Linking #{from} to #{to}"
-    FileUtils.rm(to) if File.symlink?(to)
-    FileUtils.ln_sf(from,to)
+if create_maj_version_link then
+  Dir.chdir("#{options[:dest]}/#{discattrs[:family]}") do
+    maj_ver = discattrs[:version].split('.').first
+    if maj_ver != versiondir then
+      from = versiondir
+      to = maj_ver
+      puts "Linking #{from} to #{to}"
+      FileUtils.rm(to) if File.symlink?(to)
+      FileUtils.ln_sf(from,to)
+    end
   end
 end
 

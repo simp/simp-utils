@@ -6,7 +6,7 @@ License: Apache License, Version 2.0
 Group: Applications/System
 Source: %{name}-%{version}-%{release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-Requires: puppet-agent >= 1.0.0
+Requires: puppet-agent >= 5.0.0
 Requires: genisoimage
 Requires: rpm
 Requires: yum

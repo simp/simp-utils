@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/opt/puppetlabs/puppet/bin/ruby
 
 #
 # This script unpacks either an ISO image or a DVD to the specified directory
@@ -21,7 +21,6 @@
 #  as root.
 #
 
-require 'rubygems'
 require 'optparse'
 require 'fileutils'
 require 'find'
@@ -113,34 +112,44 @@ def update_yum_repo(repo, group)
   if Process.uid == 0
     repo_dirs.each  { |dir|
       begin
-          FileUtils.chown_R('root',"#{group}", dir)
+          FileUtils.chown_R('root',group, dir)
       rescue Exception => e
         $stderr.puts("Warning: Could not change permissions on #{dir} to root:#{group}.")
         $stderr.puts(e)
       end
 
       begin
-        if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('1.9')
-          # Use Puppet to hack around the lack of symbolic modes in Ruby < 1.9
-          system(%{puppet resource file #{dir} recurse=true mode='g+rX' 2>&1 > /dev/null})
-        else
-          FileUtils.chmod_R('g+rX',dir)
-        end
+        FileUtils.chmod_R('g+rX',dir)
       rescue Exception => e
         $stderr.puts("Warning: Could not change permissions on #{dir} to 'g+rX'.")
         $stderr.puts(e)
       end
       begin
-        if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('1.9')
-          system(%{puppet resource file #{dir} mode='g+s' 2>&1 > /dev/null})
-        else
-          FileUtils.chmod('g+s',dir)
-        end
+        FileUtils.chmod('g+s',dir)
       rescue Exception => e
         $stderr.puts("Warning: Could iset group id permission on  #{dir}  'g+s'.")
         $stderr.puts(e)
       end
     }
+  end
+end
+
+def sort_noarch(dir, arch)
+# dir = directory you are searching
+# arch = the architecture of the machine
+
+# TODO:  May want to check the name first before doing rpm
+#
+  noarchdir = File.expand_path("../noarch", dir )
+  Dir.mkdir(noarchdir, 0750) unless Dir.exists?(noarchdir)
+  Dir.chdir(dir) do
+    Dir.glob('*.rpm').each do |rpmfile|
+      rpmarch = rpmfile.split('.')[-2]
+      unless [ arch, 'noarch'].include?(rpmarch)
+         rpmarch = `rpm -qp #{rpmfile} --queryformat '%{ARCH}' 2> /dev/null`
+      end
+      FileUtils.mv(rpmfile, noarchdir) if rpmarch.eql? 'noarch'
+    end
   end
 end
 
@@ -287,15 +296,10 @@ progress = ProgressBar.new(iso_toc.size)
 
 destdir = "#{options[:dest]}/#{discattrs[:family]}/#{versiondir}/#{discattrs[:arch]}/"
 simpdir = "#{options[:dest]}/SIMP/#{discattrs[:arch]}/"
-simpdir_noarch = "#{options[:dest]}/SIMP/noarch/"
 
 iso_toc.each do |iso_entry|
   if iso_entry =~ /^\/SIMP/
-    if iso_entry =~ /noarch.rpm$/
-      target = "#{simpdir_noarch}#{File.basename(iso_entry)}"
-    else
-      target = "#{simpdir}#{File.basename(iso_entry)}"
-    end
+    target = "#{simpdir}#{File.basename(iso_entry)}"
   else
     target = "#{destdir}#{iso_entry}"
   end
@@ -312,8 +316,9 @@ iso_toc.each do |iso_entry|
 end
 
 puts "Unpacking complete, updating yum repositories...."
+sort_noarch(simpdir,discattrs[:arch] )
 update_yum_repo("#{destdir}/Updates", "#{options[:group]}")
-update_yum_repo(simpdir, "#{options[:group]}") unless (simpdir == destdir)
+update_yum_repo(simpdir, options[:group]) unless (simpdir == destdir)
 puts "Repo creation complete"
 
 if create_maj_version_link then

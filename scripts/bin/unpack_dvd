@@ -12,7 +12,7 @@
 #  under the specified directory.
 #
 #  Any files under SIMP directory on the ISO are unpacked to the SIMP directory and
-#  all otheres under the OS directory
+#  all others under the OS directory
 #
 #  The OS repo will be created under an Updates directory.  Any RPM files found under
 #  any directory unpacked under the OS directory will be linked and included in the repo.

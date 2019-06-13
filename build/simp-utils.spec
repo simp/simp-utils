@@ -60,6 +60,8 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 
 %changelog
 * Wed Jun 12 2019 Jeanne Greulich <jeanne.greulich@onyxpoint.com> - 6.2.3-0
+- Update updaterepo script to change permissions on the repo
+   files as well as repodata.
 - Update unpack_dvd script
   - Make sure permissions on all directories containing RPMs for the
     repo are correct.
@@ -70,6 +72,8 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
   - Added an option to allow user to not link the extracted files to the
     major version.
   - Added an option to change what group is used to own the files.
+  - Used puppet ruby instead of system ruby and removed Ruby 1.9 logic
+    and changed puppet-agent dependency to > 5.0
 - Updated the README
 
 * Mon Jun 03 2019 Liz Nemsick <lnemsick.simp@gmail.com> - 6.2.2-0

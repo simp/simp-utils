@@ -174,11 +174,10 @@ opts = OptionParser.new do |opts|
     options[:dest] = dest.chomp
   end
 
-  opts.on("-v", "--version VERSION", "Over ride for the version in the .treeinfo file on the DVD.",
-    "  The CentOS DVDs often only have the major version and will over write",
-    "  what is in the existing major version directory.",
-    "  By default this directory will be linked to the major version directory."
-
+  opts.on("-v", "--version VERSION", "Override for the version in the .treeinfo file on the DVD.",
+    "  The CentOS DVDs often only have the major version and will overwrite",
+    "  what is in the existing major version directory. Use this option to specify",
+    "  a more specific version for the name of the directory if needed"
     ) do |version|
     options[:version] = version.chomp
   end
@@ -317,7 +316,7 @@ end
 
 puts "Unpacking complete, updating yum repositories...."
 sort_noarch(simpdir,discattrs[:arch] )
-update_yum_repo("#{destdir}/Updates", "#{options[:group]}")
+update_yum_repo("#{destdir}/Updates", options[:group])
 update_yum_repo(simpdir, options[:group]) unless (simpdir == destdir)
 puts "Repo creation complete"
 

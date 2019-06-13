@@ -61,15 +61,15 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 %changelog
 * Wed Jun 12 2019 Jeanne Greulich <jeanne.greulich@onyxpoint.com> - 6.2.3-0
 - Update unpack_dvd script
-  - made sure permissions on all directories containing RPMs for the
-    repo had correct permissions.
+  - Make sure permissions on all directories containing RPMs for the
+    repo are correct.
   - Only attempt to change ownership of files if run as root.
-  - put `noarch` rpms under noarch directry for SIMP repo.
-  - Allow user to specify version directory for OS because CentOS
-    .treeinfo file only contains Major Version number.
-  - Add optin to allow user to not link the extracted files to the
+  - Put `noarch` rpms under the `noarch` directory for the SIMP repo.
+  - Allow the user to specify the version directory for the OS, because
+    the CentOS `.treeinfo` file only contains the major OS version number.
+  - Added an option to allow user to not link the extracted files to the
     major version.
-  - added option to change what group was used to owned the files.
+  - Added an option to change what group is used to own the files.
 - Updated the README
 
 * Mon Jun 03 2019 Liz Nemsick <lnemsick.simp@gmail.com> - 6.2.2-0

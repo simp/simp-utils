@@ -127,7 +127,7 @@ def update_yum_repo(repo, group)
       begin
         FileUtils.chmod('g+s',dir)
       rescue Exception => e
-        $stderr.puts("Warning: Could iset group id permission on  #{dir}  'g+s'.")
+        $stderr.puts("Warning: Could  not set group id permission on #{dir} 'g+s'.")
         $stderr.puts(e)
       end
     }

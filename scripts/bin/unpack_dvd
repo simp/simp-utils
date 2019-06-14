@@ -137,18 +137,20 @@ end
 def sort_noarch(dir, arch)
 # dir = directory you are searching
 # arch = the architecture of the machine
-
-# TODO:  May want to check the name first before doing rpm
+#
+#  This module sorts the noarch RPMs into the noarch
+#  directory.
 #
   noarchdir = File.expand_path("../noarch", dir )
   Dir.mkdir(noarchdir, 0750) unless Dir.exists?(noarchdir)
   Dir.chdir(dir) do
     Dir.glob('*.rpm').each do |rpmfile|
+      next if File.symlink?(rpmfile)
       rpmarch = rpmfile.split('.')[-2]
       unless [ arch, 'noarch'].include?(rpmarch)
          rpmarch = `rpm -qp #{rpmfile} --queryformat '%{ARCH}' 2> /dev/null`
       end
-      FileUtils.mv(rpmfile, noarchdir) if rpmarch.eql? 'noarch'
+      FileUtils.mv(rpmfile, noarchdir, :force => true) if rpmarch.eql? 'noarch'
     end
   end
 end

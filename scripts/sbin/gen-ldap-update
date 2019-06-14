@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/opt/puppetlabs/puppet/bin/ruby
 #
 # Print out a modify LDIF to set the attributes of the DNs of interest
 # to the values found in /etc/openldap/default.ldif.  This output should

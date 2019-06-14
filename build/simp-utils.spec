@@ -1,6 +1,6 @@
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.2.3
+Version: 6.2.2
 Release: 0
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -59,7 +59,7 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
-* Wed Jun 12 2019 Jeanne Greulich <jeanne.greulich@onyxpoint.com> - 6.2.3-0
+* Wed Jun 12 2019 Jeanne Greulich <jeanne.greulich@onyxpoint.com> - 6.2.2-0
 - Update updaterepo script to change permissions on the repo
    files as well as repodata.
 - Update unpack_dvd script

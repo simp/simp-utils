@@ -169,6 +169,16 @@ shared_examples_for 'a YUM repo updater' do |host, repo, command|
       end
     end
 
+    it 'updaterepos should allow apache group access to directories and files' do
+      info = on(host, "ls -ld #{repo_dir(repo)}/x86_64").stdout.strip
+      expect(info).to match(/^drwxr\-[xs].*root\s+apache/)
+      info = on(host, "ls -l #{repo_dir(repo)}/x86_64/").stdout.strip
+      info.split("\n").each do |file_info|
+        next if file_info.match(/^total/)
+        expect(file_info).to match(/^.rw.r..*root\s+apache/)
+      end
+    end
+
     it 'updaterepos should be safely re-run' do
       on(host, command, :pty => true )
     end

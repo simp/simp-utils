@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/opt/puppetlabs/puppet/bin/ruby
 #
 # This is a YAML-based node classifier which can be used as a Puppet
 # External Node Classifier (ENC). It identifies the environment for

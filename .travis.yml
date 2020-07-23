@@ -35,6 +35,7 @@ addons:
   apt:
     packages:
       - rpm
+      - mkisofs
 
 before_install:
   - rm -f Gemfile.lock

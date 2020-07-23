@@ -212,7 +212,7 @@ if not ARGV.length > 0 then
   exit 1
 end
 fail("Could not find a SIMP default output directory and no --dest option provided") unless options[:dest]
-fail("Destination directory does not exist") if not File.directory?(options[:dest])
+fail("Destination directory '#{options[:dest]}' does not exist") if not File.directory?(options[:dest])
 
 # Set nice names for options
 create_maj_version_link = options[:link]
@@ -317,9 +317,13 @@ iso_toc.each do |iso_entry|
 end
 
 puts "Unpacking complete, updating yum repositories...."
-sort_noarch(simpdir,discattrs[:arch] )
+
+if File.directory?(simpdir)
+  sort_noarch(simpdir,discattrs[:arch] )
+  update_yum_repo(simpdir, options[:group]) unless (simpdir == destdir)
+end
+
 update_yum_repo("#{destdir}/Updates", options[:group])
-update_yum_repo(simpdir, options[:group]) unless (simpdir == destdir)
 puts "Repo creation complete"
 
 if create_maj_version_link then

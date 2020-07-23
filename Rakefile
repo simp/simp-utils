@@ -16,7 +16,7 @@ CLEAN.include 'coverage'
 # then create a new one with the same name.
 Rake.application.instance_variable_get('@tasks').delete('spec_standalone')
 desc "Run spec tests"
-RSpec::Core::RakeTask.new(:spec_standalone) do |t|
+RSpec::Core::RakeTask.new(:spec) do |t|
   t.rspec_opts = ['--color']
   t.pattern = 'spec/scripts/**/*_spec.rb'
 end

@@ -73,7 +73,9 @@ describe 'unpack_dvd script' do
       if missing_apps.empty?
         it 'builds a test ISO' do
           Dir.chdir(target) do
-            %x{#{mkisofs} -o #{iso_path} .}
+            cmd = "#{mkisofs} -o #{iso_path} ."
+            puts cmd
+            %x[#{cmd}]
             expect($?.exitstatus).to eq 0
           end
         end
@@ -94,6 +96,42 @@ describe 'unpack_dvd script' do
                 File.join('output', os, os_version, '**', 'Updates', 'repodata', '*')
               ).grep(/repomd\.xml$/)
             ).not_to be_empty
+          end
+        end
+
+        it 'runs unpack_dvd --unpack-pxe --version x.y.z' do
+          Dir.chdir(working_dir) do
+            FileUtils.mkdir_p('tftpboot')
+            FileUtils.mkdir_p('output2')
+
+            %x{ruby #{unpack_dvd} -d output2 --unpack-pxe tftpboot #{iso_path} --version x.y.z}
+            expect($?.exitstatus).to eq 0
+          end
+        end
+
+        it 'has a populated tftpboot directory' do
+          Dir.chdir(working_dir) do
+            expect(
+              Dir.glob(
+                File.join('tftpboot', "#{os.downcase}-x.y.z-x86_64", '*')
+              ).grep(%r[/dummy\.img$])
+            ).not_to be_empty
+          end
+        end
+
+        it "symlinks tftpboot/centos-[os_version]-x86_64 to tftpboot/centos-x.y.z-x86_64" do
+          Dir.chdir(working_dir) do
+            src = File.join('tftpboot', "#{os.downcase}-x.y.z-x86_64")
+            symlink = File.join('tftpboot', "#{os.downcase}-#{os_version}-x86_64")
+            expect( File.readlink(symlink) ).to eql File.basename(src)
+          end
+        end
+
+        it "symlinks yum repo [os_version] to x.y.z" do
+          Dir.chdir(working_dir) do
+            src = File.join('output2', os, 'x.y.z')
+            symlink = File.join('output2', os, os_version)
+            expect( File.readlink(symlink) ).to eql File.basename(src)
           end
         end
       else

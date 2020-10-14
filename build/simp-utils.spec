@@ -1,6 +1,6 @@
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.2.3
+Version: 6.3.0
 Release: 0
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -59,6 +59,16 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Tue Oct 13 2020 Chris Tessmer <chris.tessmer@onyxpoint.com> - 6.3.0-0
+- Added (optional) `--unpack-pxe [DIR]` option to the `unpack_dvd` script
+  - Added (optional) `--environment ENV` to set the PXE rsync environment
+  - Added a new `--[no-]unpack-yum` (enabled by default), to permit users to
+    disable the RPM unpack
+  - To enable unpacking PXE tftpboot files, run with `--unpack-pxe`
+  - To disable unpacking RPMs/yum repos, run with `--no-unpack-yum`
+  - See `unpack_dvd --help` for details
+- Overhauled `unpack_dvd --help`; output now fits on 80-character PTY consoles
+
 * Thu Jul 23 2020 Trevor Vaughan <tvaughan@onyxpoint.com> - 6.2.3-0
 - Add spec tests for unpack_dvd
 - Fix minor bugs identified unpack_dvd during testing

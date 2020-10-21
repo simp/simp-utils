@@ -339,6 +339,46 @@ def unpack_pxeboot_from_iso(discattrs, versiondir, isoinfo, options)
   puts "Unpacking PXE boot image files complete."
 end
 
+def fail_on_unspecific_versiondir(versiondir, options, discattrs)
+  if versiondir.split('.').size <= 1
+    if options[:version] == versiondir
+       warn <<~MSG
+         WARNING: unspecific versioned directory name ('#{versiondir}'),
+                 (Allowing because it was passed in by option)
+
+       MSG
+       return
+    end
+
+    puts <<~MSG
+  ERROR:
+
+  The versioned directory name ('#{versiondir}') this script is configured to unpack into
+  is not specific enough to be safe; if used, this ISO\'s data may overwrite/be
+  overwritten by other unpacked ISOs.
+
+  Specific release versions must contain at least one dot (.) character.
+
+  The version '#{versiondir}' may have been automatically determined from the ISO\'s
+  metadata; some OS distributions (CentOS) only provide the major OS release
+  version in their ISOs\' metadata.
+
+  WORKAROUND:
+
+  Run this script again with `-v` and specify a more specific version.  For
+  instance, when unpacking  ISO CentOS-7-x86_64-DVD-2003.iso, you could run:
+
+     unpack_dvd -v 7.0.2003 CentOS-7-x86_64-DVD-2003.iso
+
+  This would use '7.0.2003' as the specific versioned directory name to unpack
+  into, and point the major release directory name '7' to  '7.0.2003'
+  (auto-linking can be disabled with `-n`).
+
+  MSG
+    exit 1
+  end
+end
+
 # Set defaults
 options = {
   verbose: false,
@@ -452,7 +492,7 @@ end
 opt_parser.parse!
 
 # Option checking
-fail("ERROR: You must specify an ISO to unpack\n\n#{opts}") if (ARGV.length < 1)
+fail("ERROR: You must specify an ISO to unpack") if (ARGV.length < 1)
 fail("ERROR: Could not detect a package destination directory, and no --dest option provided") unless options[:dest]
 fail("ERROR: Destination directory '#{options[:dest]}' does not exist") unless File.directory?(options[:dest])
 
@@ -513,6 +553,8 @@ if options[:verbose]
   puts bnr + 'discattrs:', discattrs.to_yaml, ''
   puts bnr + "versiondir: #{versiondir}", ''
 end
+
+fail_on_unspecific_versiondir(versiondir,options,discattrs)
 
 if options[:actions][:unpack_yum_repo]
   unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)

@@ -96,6 +96,29 @@ def bnr
   ('='*4) + ' '
 end
 
+# Extract the .treeinfo file from the disc and parse out the relevant values.
+#
+# FIXME: This should really parse as an .ini instead of naively grepping lines.
+def parse_treeinfo_into_discattrs(text)
+  discattrs = {}
+  text.each_line do |line|
+    if line =~ /^family = (.*)$/
+        fam = $1.chomp
+        if fam.chomp =~ /CentOS/
+          discattrs[:family] = "CentOS"
+        elsif fam.chomp =~ /Red Hat|RHEL|RedHat/
+          discattrs[:family] = "RedHat"
+        end
+    elsif line =~ /^version = (.*)$/
+      discattrs[:version] = $1.chomp
+    elsif line =~ /^arch = (.*)$/
+      discattrs[:arch] = $1.chomp
+    end
+  end
+  discattrs
+end
+
+
 def update_yum_repo(repo, group)
   repo_dirs = [ repo ]
 
@@ -144,20 +167,20 @@ def update_yum_repo(repo, group)
       begin
           FileUtils.chown_R('root',group, dir)
       rescue Exception => e
-        $stderr.puts("Warning: Could not change permissions on #{dir} to root:#{group}.")
+        $stderr.puts("WARNING: Could not change permissions on #{dir} to root:#{group}.")
         $stderr.puts(e)
       end
 
       begin
         FileUtils.chmod_R('g+rX',dir)
       rescue Exception => e
-        $stderr.puts("Warning: Could not change permissions on #{dir} to 'g+rX'.")
+        $stderr.puts("WARNING: Could not change permissions on #{dir} to 'g+rX'.")
         $stderr.puts(e)
       end
       begin
         FileUtils.chmod('g+s',dir)
       rescue Exception => e
-        $stderr.puts("Warning: Could  not set group id permission on #{dir} 'g+s'.")
+        $stderr.puts("WARNING: Could  not set group id permission on #{dir} 'g+s'.")
         $stderr.puts(e)
       end
     }
@@ -403,7 +426,6 @@ opt_parser = OptionParser.new do |opts|
   opts.separator 'Basic unpack options:'
   opts.separator ''
 
-
   opts.on("-v", "--version VERSION",
     "Override OS version from the ISO's .treeinfo",
     "  file (which is often just the major OS",
@@ -507,12 +529,12 @@ discattrs = {
 
 discattrs[:path] = ARGV.first
 if not File.readable?(discattrs[:path])
-  $stderr.puts("Error: Could not read file #{discattrs[:path]}")
+  $stderr.puts("ERROR: Could not read file #{discattrs[:path]}")
   exit 1
 end
 
 if File.directory?(discattrs[:path])
-  $stderr.puts("Error: #{discattrs[:path]} is a directory...")
+  $stderr.puts("ERROR: #{discattrs[:path]} is a directory...")
   exit 1
 end
 
@@ -521,32 +543,20 @@ if File.blockdev?(discattrs[:path])
   isoinfo = "isoinfo dev=#{discattrs[:path]}"
 end
 
-# Extract the .treeinfo file from the disc and parse out the relevant values.
-%x{#{isoinfo} -R -x /.treeinfo}.each_line do |line|
-  if line =~ /^family = (.*)$/
-      fam = $1.chomp
-      if fam.chomp =~ /CentOS/
-        discattrs[:family] = "CentOS"
-      elsif fam.chomp =~ /Red Hat|RHEL|RedHat/
-        discattrs[:family] = "RedHat"
-      end
-  elsif line =~ /^version = (.*)$/
-    discattrs[:version] = $1.chomp
-  elsif line =~ /^arch = (.*)$/
-    discattrs[:arch] = $1.chomp
-  end
-end
+discattrs.merge!(parse_treeinfo_into_discattrs(%x{#{isoinfo} -R -x /.treeinfo}))
 
 # If everything isn't filled, die a slow death.
 discattrs.each_pair do |k,v|
   if v.nil?
-    $stderr.puts("Error: Was not able to find the value for #{k} in the DVD .treeinfo file.")
+    $stderr.puts("ERROR: Was not able to find the value for #{k} in the DVD .treeinfo file.")
     exit 1
   end
 end
 
 # Use the version in .treeinfo if no version has been specified"
 versiondir = options[:version] || discattrs[:version]
+
+puts "Unpacking ISO as '#{discattrs[:family]}' version '#{versiondir}'"
 
 if options[:verbose]
   puts bnr + 'options:', options.to_yaml, ''

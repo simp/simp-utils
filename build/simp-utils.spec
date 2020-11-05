@@ -1,6 +1,6 @@
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.3.0
+Version: 6.4.0
 Release: 0
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -59,6 +59,14 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Wed Oct 21 2020 Chris Tessmer <chris.tessmer@onyxpoint.com> - 6.4.0-0
+- Added check for dangerously unspecific OS versions in `unpack_dvd`
+  (e.g., '7' instead of '7.0.2003').  This is common when autodetecting the OS
+  version from the ISO's .treeinfo on some OSes (particularly CentOS).
+  - When detected, script will exit with an informative message + instructions.
+  - In this case, users should provide a more specific version with `-v`.
+  - Users can explicitly specify an unspecific version with `-v`.
+
 * Tue Oct 13 2020 Chris Tessmer <chris.tessmer@onyxpoint.com> - 6.3.0-0
 - Added (optional) `--unpack-pxe [DIR]` option to the `unpack_dvd` script
   - Added (optional) `--environment ENV` to set the PXE rsync environment

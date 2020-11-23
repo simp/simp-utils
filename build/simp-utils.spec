@@ -1,6 +1,6 @@
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.4.0
+Version: 6.4.1
 Release: 0
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -29,6 +29,7 @@ Useful scripts for dealing with a Puppet environment.
 # Make your directories here.
 mkdir -p %{buildroot}/usr/share/simp/ldifs
 mkdir -p %{buildroot}/usr/share/simp/upgrade_scripts
+mkdir -p %{buildroot}/usr/share/simp/ks
 mkdir -p %{buildroot}/usr/local/bin
 mkdir -p %{buildroot}/usr/local/sbin
 
@@ -59,6 +60,10 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Mon Nov 23 2020 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.4.1-0
+- added the kickstart files to /usr/share/simp to allow users to have access
+  all versions of the kickstart files.
+
 * Wed Oct 21 2020 Chris Tessmer <chris.tessmer@onyxpoint.com> - 6.4.0-0
 - Added check for dangerously unspecific OS versions in `unpack_dvd`
   (e.g., '7' instead of '7.0.2003').  This is common when autodetecting the OS

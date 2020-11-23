@@ -9,6 +9,11 @@ Utilities for managing SIMP
 Example ldif files to help manage LDAP. These ldifs are installed in
 `/usr/share/simp/ldifs`.
 
+## Kickstart Scripts
+
+Example kickstart scripts to help set up PXE booting are installed in
+`/usr/share/simp/ks`.
+
 ## Scripts
 
 This section contains a brief description of the scripts installed under

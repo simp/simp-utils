@@ -52,6 +52,9 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 /usr/local/sbin/updaterepos
 /usr/share/simp
 %attr(0750,root,root) /usr/share/simp/upgrade_scripts
+%attr(0755,-,-) /usr/share/simp/ks/CentOS/repodetect.sh
+%attr(0755,-,-) /usr/share/simp/ks/CentOS/7/diskdetect.sh
+%attr(0755,-,-) /usr/share/simp/ks/CentOS/8/diskdetect.sh
 
 %post
 # Post installation stuff

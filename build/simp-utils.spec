@@ -64,7 +64,7 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 
 %changelog
 * Mon Nov 23 2020 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.5.0-0
-- added the kickstart files to /usr/share/simp to allow users to have access
+- Added sample kickstart files to /usr/share/simp to allow users to have access
   all versions of the kickstart files.
 
 * Wed Oct 21 2020 Chris Tessmer <chris.tessmer@onyxpoint.com> - 6.4.0-0

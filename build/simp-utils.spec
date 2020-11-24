@@ -1,6 +1,6 @@
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.4.1
+Version: 6.5.0
 Release: 0
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -60,7 +60,7 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
-* Mon Nov 23 2020 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.4.1-0
+* Mon Nov 23 2020 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.5.0-0
 - added the kickstart files to /usr/share/simp to allow users to have access
   all versions of the kickstart files.
 

@@ -21,24 +21,21 @@ end
 
 # Set up SIMP repos on the host
 #
-# By default, the SIMP '6_X' repos available online will be configured.  This
-# can be overidden with the BEAKER_repo environment variable as follows:
-# - When set to a fully qualified path of a repo file, the file will
-#   be installed as a repo on the host.  In this case set_up_simp_main
-#   and set_up_simp_deps are both ignored, as the repo file is assumed
-#   to be configured appropriately.
-# - Otherwise, BEAKER_repo is assumed to be the base name of the SIMP
-#   internet repos (e.g., '6_X_Alpha')
+# By default, the latest SIMP repos available online will be configured.  This
+# can be overidden with the BEAKER_repo environment variable, when BEAKER_repo
+# is set to a fully qualified path of a repo file.
 #
 # +host+: Host object on which SIMP repo(s) will be installed
 # +set_up_simp_main+:  Whether to set up the main SIMP repo
-# +set_up_simp_deps+:  Whether to set up the SIMP dependencies repo
+#                      (simp-community-simp)
+# +set_up_simp_deps+:  Whether to set up the SIMP dependencies repos
+#                      ( simp-community_epel, simp_community_puppet, and
+#                      simp-community-postgresql)
 #
 # @fails if the specified repos cannot be installed on host
 def set_up_simp_repos(host, set_up_simp_main = true, set_up_simp_deps = true )
   reponame = ENV['BEAKER_repo']
-  reponame ||= '6_X'
-  if reponame[0] == '/'
+  if reponame && (reponame[0] == '/')
     copy_repo(host, reponame)
   else
     disable_list = []
@@ -138,6 +135,12 @@ test_name 'updaterepos unit test'
 describe 'updaterepos unit test' do
 
   hosts.each do |host|
+    os_major = fact_on(host, 'operatingsystemmajrelease')
+    if os_major == '8'
+      puts 'SKIPPING test because SIMP repositories for EL8 are not set up: SIMP-9143'
+      next
+    end
+
     let(:noarch_rpms) { [
       'pupmod-puppetlabs-stdlib',
       'pupmod-simp-simplib',
@@ -149,18 +152,18 @@ describe 'updaterepos unit test' do
       'chkrootkit'
     ] }
 
-    context 'setup' do
+    context "setup on #{host}" do
       it 'should set up common test files' do
         scp_to(host, 'scripts/sbin/updaterepos', '/root/updaterepos')
         on(host, 'chmod +x /root/updaterepos')
       end
 
       it 'should set up remote repositories' do
-        host.install_package('epel-release')
+        enable_epel_on(host)
+        set_up_simp_repos(host)
         host.install_package('createrepo')
         host.install_package('yum-utils')
         host.install_package('httpd')
-        set_up_simp_repos(host)
         on(host, 'yum makecache')
       end
 
@@ -178,7 +181,7 @@ describe 'updaterepos unit test' do
 
     end
 
-    context 'updaterepos operation' do
+    context "updaterepos operation on #{host}" do
 
       context 'with no arguments' do
         it_behaves_like('a YUM repo updater', host, 'SIMP', '/root/updaterepos')

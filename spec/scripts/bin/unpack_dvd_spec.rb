@@ -43,22 +43,24 @@ describe 'unpack_dvd script' do
     target_name = File.basename(target)
 
     context "when unpacking an ISO for #{target_name}" do
+      before(:each) {
+        working_dir = File.join(@tmpdir, target_name)
+        @output_dir = File.join(working_dir,'output')
+        @tftpboot_dir = File.join(working_dir,'tftpboot')
+        FileUtils.mkdir_p([@output_dir,@tftpboot_dir])
+      }
+      after(:each) do
+        FileUtils.remove_entry_secure(@output_dir) if File.directory?(@output_dir)
+        FileUtils.remove_entry_secure(@tftpboot_dir) if File.directory?(@tftpboot_dir)
+      end
+
       let(:os) { target_name.split('_').first }
       let(:os_version) { target_name.split('_').last }
       let(:os_version_xyz) { (os_version.split('.').size > 1) ? os_version : "#{os_version}.x.y" }
       let(:iso_path) { File.join(@tmpdir, "#{target_name}.iso") }
-      let(:working_dir) do
-        dir = File.join(@tmpdir, target_name)
-        File.directory?(dir) ? dir : FileUtils.mkdir(dir).first
-      end
-      let(:output_dir) { File.join(working_dir,'output') }
-      let(:tftpboot_dir) { File.join(working_dir,'tftpboot') }
+      let(:output_dir) { @output_dir }
+      let(:tftpboot_dir) { @tftpboot_dir }
       let(:cmd){ "ruby '#{unpack_dvd}' -d '#{output_dir}' '#{iso_path}'" }
-      before(:each) { FileUtils.mkdir([output_dir,tftpboot_dir]) }
-      after(:each) do
-        FileUtils.remove_entry_secure(output_dir) if File.directory?(output_dir)
-        FileUtils.remove_entry_secure(tftpboot_dir) if File.directory?(tftpboot_dir)
-      end
 
       unless missing_apps.empty?
         it 'runs unpack_dvd' do

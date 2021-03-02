@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/opt/puppetlabs/puppet/bin/ruby
 
 # A script to convert a all users in a running LDAP instance over to
 # InetOrgPerson entries.

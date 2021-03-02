@@ -1,7 +1,7 @@
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.5.0
-Release: 0
+Version: 6.5.1
+Release: 1
 License: Apache License, Version 2.0
 Group: Applications/System
 Source: %{name}-%{version}-%{release}.tar.gz
@@ -28,7 +28,6 @@ Useful scripts for dealing with a Puppet environment.
 
 # Make your directories here.
 mkdir -p %{buildroot}/usr/share/simp/ldifs
-mkdir -p %{buildroot}/usr/share/simp/upgrade_scripts
 mkdir -p %{buildroot}/usr/share/simp/ks
 mkdir -p %{buildroot}/usr/local/bin
 mkdir -p %{buildroot}/usr/local/sbin
@@ -51,7 +50,6 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 /usr/local/sbin/simpenv
 /usr/local/sbin/updaterepos
 /usr/share/simp
-%attr(0750,root,root) /usr/share/simp/upgrade_scripts
 %attr(0755,-,-) /usr/share/simp/ks/CentOS/repodetect.sh
 %attr(0755,-,-) /usr/share/simp/ks/CentOS/7/diskdetect.sh
 %attr(0755,-,-) /usr/share/simp/ks/CentOS/8/diskdetect.sh
@@ -63,6 +61,13 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Mon Mar 01 2021 Liz Nemsick <lnemsick.simp@gmail.com> - 6.5.1-1
+- Changed shebang in convert_to_inetorg.rb to use Puppet's Ruby instead
+  of system Ruby.
+- Removed upgrade_simp_6.0.0_to_6.1.0 script
+- Added a comment to the sample EL8 kickstart file to describe changes
+  needed if booting in UEFI mode.
+
 * Mon Nov 23 2020 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.5.0-0
 - Added sample kickstart files to /usr/share/simp to allow users to have access
   all versions of the kickstart files.

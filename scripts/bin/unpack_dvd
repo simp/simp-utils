@@ -19,8 +19,9 @@
 #
 # When unpacking RPMs:
 #
-#  * The script creates the relevant OS directory (i.e., `RedHat/7.5/x86_64/`)
-#    and a `SIMP/` directory under the yum directory root.
+#  * The script creates the relevant OS directory  (i.e., `RedHat/7.5/x86_64/`)
+#    and a`SIMP` directory with the relevant OS information (i.e., `SIMP/RedHat/7.5/x86_64/`)
+#    under the yum directory root.
 #
 #  * Any files under the `SIMP/` directory on the ISO are unpacked to the local
 #    `SIMP/` directory; all other files are unpacked under the OS directory.
@@ -247,7 +248,7 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
   kill_dirs = iso_toc.map{ |x| File.dirname( x ) }.uniq
   iso_toc   = iso_toc - kill_dirs
   destdir   = "#{options[:dest]}/#{discattrs[:family]}/#{versiondir}/#{discattrs[:arch]}/"
-  simpdir   = "#{options[:dest]}/SIMP/#{discattrs[:arch]}/"
+  simpdir   = "#{options[:dest]}/SIMP/#{discattrs[:family]}/#{versiondir}/#{discattrs[:arch]}/"
 
   progress  = ProgressBar.new(iso_toc.size)
 
@@ -281,8 +282,12 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
   puts "Yum repo creation complete"
 
   if options[:create_major_os_symlink]
-    target_basedir = File.join(options[:dest], discattrs[:family])
     maj_versiondir = discattrs[:version].split('.').first
+    # create major link for OS repository
+    target_basedir = File.join(options[:dest], discattrs[:family])
+    create_major_os_version_symlink(target_basedir, versiondir, maj_versiondir)
+    # create major link for SIMP repository
+    target_basedir = File.join(options[:dest],'SIMP',discattrs[:family])
     create_major_os_version_symlink(target_basedir, versiondir, maj_versiondir)
   end
 

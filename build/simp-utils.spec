@@ -61,6 +61,11 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Thu Apr 29 2021 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.5.1-1
+- Update unpack DVD to extract the SIMP repo into
+  <destination dir>/SIMP/<os family>/<os version>/ and create the link
+  to the major version if it is requested.
+
 * Mon Mar 01 2021 Liz Nemsick <lnemsick.simp@gmail.com> - 6.5.1-1
 - Changed shebang in convert_to_inetorg.rb to use Puppet's Ruby instead
   of system Ruby.

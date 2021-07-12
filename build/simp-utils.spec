@@ -6,7 +6,7 @@ License: Apache License, Version 2.0
 Group: Applications/System
 Source: %{name}-%{version}-%{release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-Requires: puppet-agent >= 5.0.0
+Requires: puppet-agent >= 6.22.1
 Requires: genisoimage
 Requires: rpm
 Requires: yum
@@ -72,6 +72,7 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 - Removed upgrade_simp_6.0.0_to_6.1.0 script
 - Added a comment to the sample EL8 kickstart file to describe changes
   needed if booting in UEFI mode.
+- Increased the minimum puppet-agent version required to 6.22.1.
 
 * Mon Nov 23 2020 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.5.0-0
 - Added sample kickstart files to /usr/share/simp to allow users to have access

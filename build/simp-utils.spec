@@ -53,7 +53,8 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 %attr(0755,-,-) /usr/share/simp/ks/CentOS/repodetect.sh
 %attr(0755,-,-) /usr/share/simp/ks/CentOS/7/diskdetect.sh
 %attr(0755,-,-) /usr/share/simp/ks/CentOS/8/diskdetect.sh
-
+%attr(0750,-,-) /usr/share/simp/transition_scripts/6.6.0/openldap2ds389.rb
+%attr(0750,-,-) /usr/share/simp/transition_scripts/6.6.0/import2ds389.rb
 %post
 # Post installation stuff
 
@@ -61,6 +62,9 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Fri Jul 23 2021 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.5.1-1
+- added transition scripts for 6.6.0
+
 * Thu Apr 29 2021 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.5.1-1
 - Update unpack DVD to extract the SIMP repo into
   <destination dir>/SIMP/<os family>/<os version>/ and create the link

@@ -22,63 +22,59 @@ require 'fileutils'
 require 'net-ldap'
 require 'optparse'
 
+# Attributes that will cause issues in 389-DS
 DELETE_KEYS = %i[
-  entryuuid
   entrycsn
+  entryuuid
+  memberuid
+  pwdaccountlockedtime
   pwdchangedtime
   pwdfailuretime
+  sshpublickey
 ].freeze
 
-def convert_group(attr)
-  newattr = {}
-  attr.each do |a, v|
-    case a
-    when :objectclass
-      newv = %w[groupOfNames nsMemberOf posixGroup]
-      v.each do |nv|
-        newv << nv
-      end
-      newattr[:objectclass] = newv.uniq
-    else
-      newattr[a] = v unless DELETE_KEYS.member?(a)
-    end
+def convert_group(attrs, groupdn)
+  newattrs = {}
+  attrs.each do |a, v|
+    newattrs[a] = v.dup
+
+    newattrs[a].delete_if { |x| x.nil? || x.strip.empty? }
+
+    newattrs[a] += %w[groupOfNames nsMemberOf posixGroup] if a == :objectclass
+
+    newattrs[a].uniq!
   end
 
-  newattr
+  newattrs[:member] = newattrs[:memberuid].map { |u| "uid=#{u},#{groupdn}" } if newattrs[:memberuid]
+
+  newattrs.delete_if { |a, _v| DELETE_KEYS.include?(a) }
+  newattrs
 end
 
-def convert_user(attr)
-  newattr = {}
-  attr.each do |a, v|
-    case a
-    when :cn
-      newattr[a] = v
-    when :sshpublickey
-      nv = []
-      v.each do |k|
-        nv << k unless k.strip.empty?
-      end
-      nv = ['<no ssh key>'] if nv.empty?
-      newattr[:nssshpublickey] = nv
-    when :objectclass
-      newv = ['nsAccount']
-      v.each do |nv|
-        case nv
-        when 'ldapPublicKey'
-          # noop drop this class
-        else
-          newv << nv
-        end
-      end
-      newattr[:objectclass] = newv.uniq
-    when :pwdaccountlockedtime
-      newattr[:nsaccountlock] = 'true'
-    else
-      newattr[a] = v unless DELETE_KEYS.include?(a)
+def convert_user(attrs)
+  newattrs = {}
+  attrs.each do |a, v|
+    newattrs[a] = v.dup
+
+    newattrs[a].delete_if { |x| x.nil? || x.strip.empty? }
+
+    if a == :objectclass
+      newattrs[a] << 'nsAccount'
+      newattrs[a].delete('ldapPublicKey')
     end
+
+    if a == :sshpublickey
+      newattrs[a] = ['<no ssh key>'] if newattrs[a].empty?
+      newattrs[:nssshpublickey] = newattrs[a]
+    end
+
+    newattrs[a].uniq!
   end
 
-  newattr
+  newattrs[:nsaccountlock] = ['true'] if newattrs[:pwdaccountlockedtime]
+
+  newattrs.delete_if { |a, _v| DELETE_KEYS.include?(a) }
+  newattrs
 end
 
 input_ldif = 'simp_openldap.ldif'
@@ -148,14 +144,14 @@ oldgroupdn = "ou=Group,#{basedn}"
 olduserdn = "ou=People,#{basedn}"
 newgroupdn = "ou=Groups,#{basedn}"
 
-ldifs389 = {}
+ldifs389 = Net::LDAP::Dataset.new
 
 ldifs.each do |dn, attr|
   # Only convert users and groups
   unless attr[:objectclass].member?('organizationalUnit')
     if dn.end_with?(oldgroupdn)
       new_dn = dn.gsub(oldgroupdn, newgroupdn)
-      ldifs389[new_dn] = convert_group(attr)
+      ldifs389[new_dn] = convert_group(attr, newgroupdn)
     elsif dn.end_with?(olduserdn)
       ldifs389[dn] = convert_user(attr)
     end
@@ -167,21 +163,8 @@ if ldifs389.empty?
   exit 1
 end
 
-ofh = File.open(output_ldif, 'w')
-
-ldifs389.each do |k, v|
-  ofh.write "dn: #{k}\n"
-  v.each do |x, y|
-    if y.is_a?(Array)
-      y.each do |p|
-        ofh.write "#{x}: #{p}\n"
-      end
-    else
-      ofh.write "#{x}: #{y}\n"
-    end
-  end
-  ofh.write "\n"
+File.open(output_ldif, 'w') do |ofh|
+  ofh.puts(ldifs389.to_ldif.join("\n"))
 end
-ofh.close
 
 puts "FINISHED output is in #{output_ldif}"

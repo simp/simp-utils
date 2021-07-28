@@ -53,8 +53,8 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 %attr(0755,-,-) /usr/share/simp/ks/CentOS/repodetect.sh
 %attr(0755,-,-) /usr/share/simp/ks/CentOS/7/diskdetect.sh
 %attr(0755,-,-) /usr/share/simp/ks/CentOS/8/diskdetect.sh
-%attr(0750,-,-) /usr/share/simp/transition_scripts/6.6.0/openldap2ds389.rb
-%attr(0750,-,-) /usr/share/simp/transition_scripts/6.6.0/import2ds389.rb
+%attr(0750,-,-) %/usr/share/simp/transition_scripts/openldap_to_389ds/openldap_to_389ds.rb
+%attr(0750,-,-) %%/usr/share/simp/transition_scripts/openldap_to_389ds/import_to_389ds.sh
 %post
 # Post installation stuff
 

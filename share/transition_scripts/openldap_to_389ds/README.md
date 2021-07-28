@@ -46,7 +46,12 @@ On the 389-DS Server:
 ```
 export PATH=$PATH:/usr/share/simp/transition_scripts/openldap_to_389ds
 openldap_to_389ds.rb -i simp_openldap.ldif -o simp_389ds.ldif
-sudo import_to_389ds.sh simp_389ds.ldif
+```
+
+  * Finally, run the following command as `root`
+
+```
+import_to_389ds.sh simp_389ds.ldif
 ```
 
 ### Validation

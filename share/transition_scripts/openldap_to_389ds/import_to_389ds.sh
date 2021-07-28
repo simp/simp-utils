@@ -33,6 +33,19 @@ fi
 admin_group="cn=administrators,ou=Groups,${basedn}"
 user_group="cn=users,ou=Groups,${basedn}"
 
+if ! hash -t dsidm >&/dev/null; then
+  echo 'Error: Could not find the "dsidm" command'
+  exit 1
+fi
+
+for gid in users administrators; do
+  if $( dsidm accounts -b "${basedn}" group get users | grep "member\(Uid\)\?:"); then
+    echo "Error: Found existing entries in the '${gid}' group, refusing to continue"
+    echo 'Please manually remove the groups if you wish to continue'
+    exit 1
+  fi
+done
+
 # Remove the users and administrators groups because they will be imported from the
 # ldif file.
 

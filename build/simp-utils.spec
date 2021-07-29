@@ -1,6 +1,6 @@
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.5.1
+Version: 6.6.0
 Release: 1
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -62,15 +62,15 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
-* Fri Jul 23 2021 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.5.1-1
-- added transition scripts for 6.6.0
+* Fri Jul 23 2021 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.6.0-1
+- Added transition scripts useful for upgrading from SIMP 6.5.0 to SIMP 6.6.0.
 
-* Thu Apr 29 2021 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.5.1-1
+* Thu Apr 29 2021 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.6.0-1
 - Update unpack DVD to extract the SIMP repo into
   <destination dir>/SIMP/<os family>/<os version>/ and create the link
   to the major version if it is requested.
 
-* Mon Mar 01 2021 Liz Nemsick <lnemsick.simp@gmail.com> - 6.5.1-1
+* Mon Mar 01 2021 Liz Nemsick <lnemsick.simp@gmail.com> - 6.6.0-1
 - Changed shebang in convert_to_inetorg.rb to use Puppet's Ruby instead
   of system Ruby.
 - Removed upgrade_simp_6.0.0_to_6.1.0 script

@@ -1,21 +1,23 @@
 ##  Introduction
 
-This directory contains transition scripts to help in the migration of users and
-groups from OpenLDAP (EL7) to 389-DS (EL8).
+This directory contains transition scripts to help in the migration of LDAP
+accounts data from a SIMP-managed OpenLDAP server (EL7) to a SIMP-managed
+389 Directory Server instance (EL8).
 
-It should contain the following files"
+It contains the following files:
 
-openldap_to_389ds.rb - ruby script that converts slapcat output to ldif for import into
-                       389 directory server
-import_to_389ds.sh   - script used to import the LDIF file created by openldap_to_389ds.rb
+* `openldap_to_389ds.rb`: Ruby script that converts `slapcat` output to an
+  LDIF file for import into a 389 Directory Server instance.
+* `import_to_389ds.sh`: Script used to import the LDIF file created by
+  `openldap_to_389ds.rb` into a 389 Directory Server instance.
 
 ## Instructions for 389-DS data import
 
-The following are instructions for importing users and groups from
-a SIMP install OpenLDAP directory server to a 389-DS server installed
-using the `simp_ds389::instances::accounts` manifest.
+The following are instructions for importing users and groups from an OpenLDAP
+directory server managed by SIMP via `simp_openldap::server` to a 389-DS instance
+managed by SIMP via `simp_ds389::instances::accounts` .
 
-The Base DN on the OpenLDAP  and the 389-DS servers must be the same.
+The Base DN on the OpenLDAP and the 389-DS servers must be the same.
 
 ### Export Data from OpenLDAP
 
@@ -27,21 +29,24 @@ sudo slapcat > /tmp/simp_openldap.ldif
 
 ### Install scripts
 
-Install the scripts and necessary dependencies on the 389-DS server.
+Install the scripts and necessary dependencies on the 389-DS server:
 
 ```
 sudo yum install -y simp-utils rubygem-net-ldap
 ```
 
+The rubygem-net-ldap package is available from the EPEL repository.
+
 ### Clean and Import the LDIF File
 
-On the 389-DS Server:
+On the 389-DS server:
 
   * Copy the `simp_openldap.ldif` file to a secure location
-    * Protect this file! It has a great deal of sensitive information
+    * **Protect this file! It has a great deal of sensitive information**
+
   * Remove the file from the OpenLDAP server
   * Run the following replacing <your basedn> with your actual Base DN
-    * Check your Hiera data if you are not sure what your Base DN is
+    * Check your Hieradata if you are not sure what your Base DN is
 
 ```
 export PATH=$PATH:/usr/share/simp/transition_scripts/openldap_to_389ds

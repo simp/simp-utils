@@ -48,16 +48,16 @@ On the 389-DS server:
   * Run the following replacing <your basedn> with your actual Base DN
     * Check your Hieradata if you are not sure what your Base DN is
 
-```
-export PATH=$PATH:/usr/share/simp/transition_scripts/openldap_to_389ds
-openldap_to_389ds.rb -i simp_openldap.ldif -o simp_389ds.ldif
-```
+      ```
+      export PATH=$PATH:/usr/share/simp/transition_scripts/openldap_to_389ds
+      openldap_to_389ds.rb -i simp_openldap.ldif -o simp_389ds.ldif
+      ```
 
   * Finally, run the following command as `root`
 
-```
-import_to_389ds.sh simp_389ds.ldif
-```
+      ```
+      import_to_389ds.sh simp_389ds.ldif
+      ```
 
 ### Validation
 

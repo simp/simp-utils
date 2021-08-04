@@ -11,7 +11,7 @@ basedn=''
 file='simp_389ds.ldif'
 
 if [ ! -z "$2" ]; then
-  $file = $2
+  file="$2"
 fi
 
 if [ ! -f ${file} ]; then
@@ -39,7 +39,7 @@ if ! hash -t dsidm >&/dev/null; then
 fi
 
 for gid in users administrators; do
-  if $( dsidm accounts -b "${basedn}" group get users | grep "member\(Uid\)\?:"); then
+  if dsidm accounts -b "${basedn}" group get users | grep "member\(Uid\)\?:"; then
     echo "Error: Found existing entries in the '${gid}' group, refusing to continue"
     echo 'Please manually remove the groups if you wish to continue'
     exit 1
@@ -49,7 +49,7 @@ done
 # Remove the users and administrators groups because they will be imported from the
 # ldif file.
 
-/usr/bin/ldapdelete -Y EXTERNAL -H ldapi://%2fvar%2frun%2fslapd-accounts.socket ${admin_group}
-/usr/bin/ldapdelete -Y EXTERNAL -H ldapi://%2fvar%2frun%2fslapd-accounts.socket ${user_group}
+/usr/bin/ldapdelete -Y EXTERNAL -H ldapi://%2fvar%2frun%2fslapd-accounts.socket "${admin_group}"
+/usr/bin/ldapdelete -Y EXTERNAL -H ldapi://%2fvar%2frun%2fslapd-accounts.socket "${user_group}"
 
-/usr/bin/ldapadd -Y EXTERNAL -H ldapi://%2fvar%2frun%2fslapd-accounts.socket -f ${file}
+/usr/bin/ldapadd -Y EXTERNAL -H ldapi://%2fvar%2frun%2fslapd-accounts.socket -f "${file}"

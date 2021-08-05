@@ -44,7 +44,7 @@ end
 Summary: SIMP Utils
 Name: simp-utils
 Version: 6.5.1
-Release: %{lua: print(package_release)}%{?dist}
+Release: %{lua: print(package_release)}
 License: Apache License, Version 2.0
 Group: Applications/System
 Source: %{name}-%{version}-%{release}.tar.gz

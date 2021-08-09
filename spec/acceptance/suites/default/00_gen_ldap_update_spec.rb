@@ -87,7 +87,10 @@ describe 'gen-ldap-update unit test' do
     end
 
     context 'when no ldap configuration is present' do
-      let(:host_base_dn) { fact_on(host, 'domain').split('.').map{ |d| "dc=#{d}" }.join(',') }
+      let(:host_base_dn) {
+        fact_on(host, 'domain').split('.').map{ |d| "dc=#{d}" }.join(',')
+      }
+
       it 'should remove old ldap.conf files' do
         on(host, 'rm -f /etc/ldap.conf /etc/openldap/ldap.conf')
       end
@@ -113,7 +116,13 @@ describe 'gen-ldap-update unit test' do
         expected = modify_ldif.gsub('dc=example,dc=com', host_base_dn)
         expect(results.stdout).to eq expected
       end
+
     end
 
+    context 'restore for next test' do
+       it 'should remove mock system directories/files created for tests' do
+        on(host, 'rm -rf /etc/ldap.conf /etc/openldap')
+       end
+    end
   end
 end

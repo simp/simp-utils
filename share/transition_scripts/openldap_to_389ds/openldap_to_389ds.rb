@@ -82,36 +82,51 @@ output_ldif = 'simp_389ds.ldif'
 basedn = nil
 
 optparse = OptionParser.new do |opts|
-  opts.banner = "Usage: #{$PROGRAM_NAME} -i <inputfile> -o <outputfile> -b <base dn>"
-  opts.separator <<~HELP_MSG
+  opts.banner = "Usage: #{$PROGRAM_NAME} -i INFILE -o OUTFILE [-b BASEDN]"
+  # in case we are using system Ruby on EL7 (2.0.0), don't use
+  # <<~
+  opts.separator <<-HELP_MSG.gsub(/^    /,'')
       See the README.md for detailed instructions.
 
     OPTIONS:
 
   HELP_MSG
 
-  opts.on('-b', '--basedn BASEDN', 'REQUIRED: base dn of the ldap server') do |b|
+  opts.on('-b', '--basedn BASEDN',
+    'Base DN of the LDAP server.  When absent,',
+    'will attempt to determine it from the input',
+    'file.'
+  ) do |b|
     basedn = b.strip
   end
-  opts.on('-i', '--input FILE', 'File that contain slapcat data from openldap server',
-          'Default ./simp_openldap.ldif') do |f|
+
+  opts.on('-i', '--input INFILE',
+    'Input LDIF file containing the slapcat dump',
+    'of the OpenLDAP server.',
+    'Default: ./simp_openldap.ldif'
+  ) do |f|
     input_ldif = f.strip
   end
-  opts.on('-o', '--output FILE', 'file to output the ldifs to import into 389-DS server',
-          'Default: ./data/simp_389ds.ldif') do |f|
+
+  opts.on('-o', '--output OUTFILE',
+    'Generated LDIF file for import into 389-DS.',
+    'Default: ./simp_389ds.ldif'
+  ) do |f|
     output_ldif = f.strip
   end
+
   opts.on('-h', '--help', 'Help') do
     puts opts
     exit
   end
-  opts.separator <<~HELP_MSG
+
+  opts.separator <<-HELP_MSG.gsub(/^    /,'')
 
     EXAMPLES:
-      # To use the default locations for input and output files;
-      #{$PROGRAM_NAME} -b 'dc=example,dc=com'
+      # To use the default locations for input and output files:
+      #{$PROGRAM_NAME} -b 'dc=my,dc=domain'
 
-     # or to specify the location of the input and output files"
+     # To specify the location of the input and output files"
       #{$PROGRAM_NAME} -b 'dc=my,dc=domain' -i /tmp/myslapcat_file.ldif -o /tmp/myds389.ldif
 
   HELP_MSG
@@ -120,19 +135,25 @@ end
 optparse.parse!
 
 unless File.exist?(input_ldif)
-  puts "Error: file '#{input_ldif}' does not exist"
+  warn "ERROR: input file '#{input_ldif}' does not exist"
   exit 1
 end
 
 # Read in the slapcat file
 fh = File.open(input_ldif, 'r')
-ldifs = Net::LDAP::Dataset.read_ldif(fh)
-fh.close
+begin
+  ldifs = Net::LDAP::Dataset.read_ldif(fh)
+rescue Exception => e
+  warn "ERROR: Malformed LDIF input:\n#{e}\n#{e.backtrace.join("\n")}"
+  exit 1
+ensure
+  fh.close
+end
 
 basedn ||= ldifs.select { |_k, v| v[:structuralobjectclass].include?('domain') }.keys.first
 
 unless basedn
-  puts 'Error: Could not determine Base DN, please specify using -b'
+  warn 'ERROR: Could not determine Base DN, please specify using -b'
   exit 1
 end
 
@@ -159,12 +180,17 @@ ldifs.each do |dn, attr|
 end
 
 if ldifs389.empty?
-  puts "Error: No records found, is base DN '#{basedn}' valid?"
+  warn "ERROR: No user or group records found, is base DN '#{basedn}' valid?"
   exit 1
 end
 
-File.open(output_ldif, 'w') do |ofh|
-  ofh.puts(ldifs389.to_ldif.join("\n"))
+begin
+  File.open(output_ldif, 'w') do |ofh|
+    ofh.puts(ldifs389.to_ldif.join("\n"))
+  end
+rescue Exception => e
+  warn "ERROR: Output file could not be created:\n#{e}\n#{e.backtrace.join("\n")}"
+  exit 1
 end
 
 puts "FINISHED output is in #{output_ldif}"

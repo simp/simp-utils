@@ -1,5 +1,12 @@
 ---
-# Workaround SIMP-5498 (BEAKER_fips=yes requires a .fixtures.yaml)
 fixtures:
+  repositories:
+    ds389:  "https://github.com/simp/pupmod-simp-ds389.git"
+    pki: https://github.com/simp/pupmod-simp-pki.git
+    simplib:  "https://github.com/simp/pupmod-simp-simplib.git"
+    stdlib:   "https://github.com/simp/puppetlabs-stdlib.git"
+    simp_ds389: https://github.com/simp/pupmod-simp-simp_ds389.git
+    systemd: https://github.com/simp/puppet-systemd.git
+
   symlinks:
-    garbage: "#{source_dir}/spec/fixtures/modules"
+    utils: "#{source_dir}"

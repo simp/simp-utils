@@ -45,8 +45,7 @@ On the 389-DS server:
     * **Protect this file! It has a great deal of sensitive information**
 
   * Remove the file from the OpenLDAP server
-  * Run the following replacing <your basedn> with your actual Base DN
-    * Check your Hieradata if you are not sure what your Base DN is
+  * Run the following
 
       ```
       export PATH=$PATH:/usr/share/simp/transition_scripts/openldap_to_389ds

@@ -13,6 +13,8 @@ HOSTS:
     box: generic/oracle7
     hypervisor: <%= hypervisor %>
   el8:
+    roles:
+      - ldap_server
     platform: el-8-x86_64
     box: generic/oracle8
     hypervisor: <%= hypervisor %>

@@ -53,6 +53,8 @@ end
 
 def convert_user(attrs)
   newattrs = {}
+  lastname = ""
+  firstname = ""
   attrs.each do |a, v|
     newattrs[a] = v.dup
 
@@ -60,8 +62,20 @@ def convert_user(attrs)
 
     if a == :objectclass
       newattrs[a] << 'nsAccount'
+      if newattrs[a].member?('inetOrgPerson')
+        newattrs[a] << 'nsPerson'
+        newattrs[a] << 'nsOrgPerson'
+      end
       newattrs[a].delete('ldapPublicKey')
     end
+
+    if a == :sn
+      lastname = newattrs[a].first
+    end
+    if a == :givenname
+      firstname = newattrs[a].first
+    end
+
 
     if a == :sshpublickey
       newattrs[a] = ['<no ssh key>'] if newattrs[a].empty?
@@ -71,6 +85,9 @@ def convert_user(attrs)
     newattrs[a].uniq!
   end
 
+  if newattrs[:objectclass].member?('nsPerson')
+    newattrs[:displayname] = [ "#{firstname} #{lastname}" ]
+  end
   newattrs[:nsaccountlock] = ['true'] if newattrs[:pwdaccountlockedtime]
 
   newattrs.delete_if { |a, _v| DELETE_KEYS.include?(a) }

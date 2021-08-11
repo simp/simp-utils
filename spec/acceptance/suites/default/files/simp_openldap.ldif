@@ -422,7 +422,6 @@ dn: cn=Test Group,ou=Group,dc=test,dc=org
 objectClass: posixGroup
 objectClass: top
 cn: testgroup
-cn: Test Group
 gidNumber: 4000
 description: "Test Group group"
 structuralObjectClass: posixGroup

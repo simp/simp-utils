@@ -200,7 +200,6 @@ describe 'OpenLDAP to 389ds scripts' do
           'administrators',
           'security',
           'testgroup',
-          'Test Group',
           'users',
         ].each do |group|
           expect(group_list).to include(group)

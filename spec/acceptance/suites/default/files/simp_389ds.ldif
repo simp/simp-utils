@@ -24,7 +24,6 @@ structuralobjectclass: posixGroup
 
 dn: cn=Test Group,ou=Groups,dc=test,dc=org
 cn: testgroup
-cn: Test Group
 createtimestamp: 20210804221111Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 description: "Test Group group"
@@ -109,6 +108,7 @@ dn: uid=admin1,ou=People,dc=test,dc=org
 cn: admin1
 createtimestamp: 20210804221111Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
+displayname: admin one
 gidnumber: 3001
 givenname: admin
 homedirectory: /home/admin1
@@ -122,6 +122,8 @@ objectclass: posixAccount
 objectclass: top
 objectclass: shadowAccount
 objectclass: nsAccount
+objectclass: nsPerson
+objectclass: nsOrgPerson
 pwdreset: FALSE
 shadowlastchange: 18839
 shadowmax: 180
@@ -137,6 +139,7 @@ dn: uid=admin2,ou=People,dc=test,dc=org
 cn: admin2
 createtimestamp: 20210804221111Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
+displayname: Admin Two
 gidnumber: 3002
 givenname: Admin
 homedirectory: /home/admin2
@@ -150,6 +153,8 @@ objectclass: posixAccount
 objectclass: top
 objectclass: shadowAccount
 objectclass: nsAccount
+objectclass: nsPerson
+objectclass: nsOrgPerson
 pwdreset: FALSE
 shadowlastchange: 18839
 shadowmax: 180
@@ -165,6 +170,7 @@ dn: uid=auditor1,ou=People,dc=test,dc=org
 cn: auditor1
 createtimestamp: 20210804221111Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
+displayname: Auditor one
 gidnumber: 7700
 givenname: Auditor
 homedirectory: /home/auditor1
@@ -178,6 +184,8 @@ objectclass: posixAccount
 objectclass: top
 objectclass: shadowAccount
 objectclass: nsAccount
+objectclass: nsPerson
+objectclass: nsOrgPerson
 pwdreset: FALSE
 shadowlastchange: 18839
 shadowmax: 180
@@ -193,6 +201,7 @@ dn: uid=baduser,ou=People,dc=test,dc=org
 cn: baduser
 createtimestamp: 20210804221111Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
+displayname: Bad User
 gidnumber: 9999
 givenname: Bad
 homedirectory: /home/baduser
@@ -206,6 +215,8 @@ objectclass: posixAccount
 objectclass: top
 objectclass: shadowAccount
 objectclass: nsAccount
+objectclass: nsPerson
+objectclass: nsOrgPerson
 pwdreset: FALSE
 shadowlastchange: 18839
 shadowmax: 180
@@ -221,6 +232,7 @@ dn: uid=user1,ou=People,dc=test,dc=org
 cn: user1
 createtimestamp: 20210804221111Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
+displayname: User One
 gidnumber: 4000
 givenname: User
 homedirectory: /home/user1
@@ -234,6 +246,8 @@ objectclass: posixAccount
 objectclass: top
 objectclass: shadowAccount
 objectclass: nsAccount
+objectclass: nsPerson
+objectclass: nsOrgPerson
 pwdreset: FALSE
 shadowlastchange: 18839
 shadowmax: 180
@@ -249,6 +263,7 @@ dn: uid=user2,ou=People,dc=test,dc=org
 cn: user2
 createtimestamp: 20210804221111Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
+displayname: User Two
 gidnumber: 4000
 givenname: User
 homedirectory: /home/user2
@@ -262,6 +277,8 @@ objectclass: posixAccount
 objectclass: top
 objectclass: shadowAccount
 objectclass: nsAccount
+objectclass: nsPerson
+objectclass: nsOrgPerson
 pwdreset: FALSE
 shadowlastchange: 18839
 shadowmax: 180

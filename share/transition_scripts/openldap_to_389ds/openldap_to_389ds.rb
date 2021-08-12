@@ -23,6 +23,9 @@ require 'net-ldap'
 require 'optparse'
 
 # Attributes that will cause issues in 389-DS
+# - memberuid is copied into to member before deletion
+# - sshpublickey is copied into nssshpublickey before deletion
+
 DELETE_KEYS = %i[
   entrycsn
   entryuuid
@@ -140,10 +143,10 @@ optparse = OptionParser.new do |opts|
   opts.separator <<-HELP_MSG.gsub(/^    /,'')
 
     EXAMPLES:
-      # To use the default locations for input and output files:
+      # To use the default locations for input and output files
       #{$PROGRAM_NAME} -b 'dc=my,dc=domain'
 
-     # To specify the location of the input and output files"
+      # To specify the location of the input and output files
       #{$PROGRAM_NAME} -b 'dc=my,dc=domain' -i /tmp/myslapcat_file.ldif -o /tmp/myds389.ldif
 
   HELP_MSG

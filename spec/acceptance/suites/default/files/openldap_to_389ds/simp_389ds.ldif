@@ -1,35 +1,22 @@
 dn: cn=LDAPAdmin,ou=People,dc=test,dc=org
 cn: LDAPAdmin
-createtimestamp: 20210804210651Z
+createtimestamp: 20210812201740Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
-modifytimestamp: 20210804210651Z
+modifytimestamp: 20210812201740Z
 objectclass: organizationalRole
 objectclass: nsAccount
 structuralobjectclass: organizationalRole
 
 dn: cn=NotAllowed,ou=Groups,dc=test,dc=org
 cn: NotAllowed
-createtimestamp: 20210804221111Z
+createtimestamp: 20210812210358Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 description: "Users not allowed to log in group"
 gidnumber: 9999
+member: uid=baduser,ou=Groups,dc=test,dc=org
 modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
-modifytimestamp: 20210804221111Z
-objectclass: posixGroup
-objectclass: top
-objectclass: groupOfNames
-objectclass: nsMemberOf
-structuralobjectclass: posixGroup
-
-dn: cn=Test Group,ou=Groups,dc=test,dc=org
-cn: testgroup
-createtimestamp: 20210804221111Z
-creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
-description: "Test Group group"
-gidnumber: 4000
-modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
-modifytimestamp: 20210804221111Z
+modifytimestamp: 20210812210358Z
 objectclass: posixGroup
 objectclass: top
 objectclass: groupOfNames
@@ -38,12 +25,12 @@ structuralobjectclass: posixGroup
 
 dn: cn=admin1,ou=Groups,dc=test,dc=org
 cn: admin1
-createtimestamp: 20210804221111Z
+createtimestamp: 20210812210358Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 description: "Admin One group"
 gidnumber: 3001
 modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
-modifytimestamp: 20210804221111Z
+modifytimestamp: 20210812210358Z
 objectclass: posixGroup
 objectclass: top
 objectclass: groupOfNames
@@ -52,12 +39,12 @@ structuralobjectclass: posixGroup
 
 dn: cn=admin2,ou=Groups,dc=test,dc=org
 cn: admin2
-createtimestamp: 20210804221111Z
+createtimestamp: 20210812210358Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 description: "Admin Two group"
 gidnumber: 3002
 modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
-modifytimestamp: 20210804221111Z
+modifytimestamp: 20210812210358Z
 objectclass: posixGroup
 objectclass: top
 objectclass: groupOfNames
@@ -66,11 +53,41 @@ structuralobjectclass: posixGroup
 
 dn: cn=administrators,ou=Groups,dc=test,dc=org
 cn: administrators
-createtimestamp: 20210804210651Z
+createtimestamp: 20210812201740Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 gidnumber: 700
+member: uid=admin1,ou=Groups,dc=test,dc=org
+member: uid=admin2,ou=Groups,dc=test,dc=org
 modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
-modifytimestamp: 20210804210651Z
+modifytimestamp: 20210812210358Z
+objectclass: posixGroup
+objectclass: top
+objectclass: groupOfNames
+objectclass: nsMemberOf
+structuralobjectclass: posixGroup
+
+dn: cn=auditor1,ou=Groups,dc=test,dc=org
+cn: auditor1
+createtimestamp: 20210812210358Z
+creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
+description: "Auditor One group"
+gidnumber: 7001
+modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
+modifytimestamp: 20210812210358Z
+objectclass: posixGroup
+objectclass: top
+objectclass: groupOfNames
+objectclass: nsMemberOf
+structuralobjectclass: posixGroup
+
+dn: cn=baduser,ou=Groups,dc=test,dc=org
+cn: baduser
+createtimestamp: 20210812210358Z
+creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
+description: "Bad User group"
+gidnumber: 9001
+modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
+modifytimestamp: 20210812210358Z
 objectclass: posixGroup
 objectclass: top
 objectclass: groupOfNames
@@ -79,12 +96,57 @@ structuralobjectclass: posixGroup
 
 dn: cn=security,ou=Groups,dc=test,dc=org
 cn: security
-createtimestamp: 20210804221111Z
+createtimestamp: 20210812210358Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 description: "The group used for auditors in simp"
 gidnumber: 7700
+member: uid=auditor1,ou=Groups,dc=test,dc=org
 modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
-modifytimestamp: 20210804221111Z
+modifytimestamp: 20210812210358Z
+objectclass: posixGroup
+objectclass: top
+objectclass: groupOfNames
+objectclass: nsMemberOf
+structuralobjectclass: posixGroup
+
+dn: cn=testgroup,ou=Groups,dc=test,dc=org
+cn: testgroup
+createtimestamp: 20210812210358Z
+creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
+description: "Test group"
+gidnumber: 4000
+member: uid=user1,ou=Groups,dc=test,dc=org
+member: uid=user2,ou=Groups,dc=test,dc=org
+modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
+modifytimestamp: 20210812210358Z
+objectclass: posixGroup
+objectclass: top
+objectclass: groupOfNames
+objectclass: nsMemberOf
+structuralobjectclass: posixGroup
+
+dn: cn=user1,ou=Groups,dc=test,dc=org
+cn: user1
+createtimestamp: 20210812210358Z
+creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
+description: "User One group"
+gidnumber: 4001
+modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
+modifytimestamp: 20210812210358Z
+objectclass: posixGroup
+objectclass: top
+objectclass: groupOfNames
+objectclass: nsMemberOf
+structuralobjectclass: posixGroup
+
+dn: cn=user2,ou=Groups,dc=test,dc=org
+cn: user2
+createtimestamp: 20210812210358Z
+creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
+description: "User One group"
+gidnumber: 4002
+modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
+modifytimestamp: 20210812210358Z
 objectclass: posixGroup
 objectclass: top
 objectclass: groupOfNames
@@ -93,11 +155,15 @@ structuralobjectclass: posixGroup
 
 dn: cn=users,ou=Groups,dc=test,dc=org
 cn: users
-createtimestamp: 20210804210651Z
+createtimestamp: 20210812201740Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 gidnumber: 100
+member: uid=admin1,ou=Groups,dc=test,dc=org
+member: uid=admin2,ou=Groups,dc=test,dc=org
+member: uid=user1,ou=Groups,dc=test,dc=org
+member: uid=user2,ou=Groups,dc=test,dc=org
 modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
-modifytimestamp: 20210804210651Z
+modifytimestamp: 20210812210358Z
 objectclass: posixGroup
 objectclass: top
 objectclass: groupOfNames
@@ -106,7 +172,7 @@ structuralobjectclass: posixGroup
 
 dn: uid=admin1,ou=People,dc=test,dc=org
 cn: admin1
-createtimestamp: 20210804221111Z
+createtimestamp: 20210812210358Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 displayname: admin one
 gidnumber: 3001
@@ -115,7 +181,7 @@ homedirectory: /home/admin1
 loginshell: /bin/bash
 mail: admin1@test.local
 modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
-modifytimestamp: 20210804221111Z
+modifytimestamp: 20210812210413Z
 nssshpublickey:: PHNvbWUgU1NIIHB1YmxpYyBrZXk+
 objectclass: inetOrgPerson
 objectclass: posixAccount
@@ -124,8 +190,8 @@ objectclass: shadowAccount
 objectclass: nsAccount
 objectclass: nsPerson
 objectclass: nsOrgPerson
-pwdreset: FALSE
-shadowlastchange: 18839
+pwdreset: TRUE
+shadowlastchange: 18851
 shadowmax: 180
 shadowmin: 1
 shadowwarning: 7
@@ -137,7 +203,7 @@ userpassword:: e1NTSEF9ODA2dVJNOGJ4TzVET2o2MkJVUnJnaFpJdmxaVFFVeFU=
 
 dn: uid=admin2,ou=People,dc=test,dc=org
 cn: admin2
-createtimestamp: 20210804221111Z
+createtimestamp: 20210812210358Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 displayname: Admin Two
 gidnumber: 3002
@@ -145,8 +211,8 @@ givenname: Admin
 homedirectory: /home/admin2
 loginshell: /bin/bash
 mail: admin2@test.local
-modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
-modifytimestamp: 20210804221111Z
+modifiersname: uid=admin2,ou=People,dc=test,dc=org
+modifytimestamp: 20210812210414Z
 nssshpublickey:: PHNvbWUgU1NIIHB1YmxpYyBrZXk+
 objectclass: inetOrgPerson
 objectclass: posixAccount
@@ -155,8 +221,8 @@ objectclass: shadowAccount
 objectclass: nsAccount
 objectclass: nsPerson
 objectclass: nsOrgPerson
-pwdreset: FALSE
-shadowlastchange: 18839
+pwdhistory: 20210812210414Z#1.3.6.1.4.1.1466.115.121.1.40#38#{SSHA}806uRM8bxO5DOj62BURrghZIvlZTQUxU
+shadowlastchange: 18851
 shadowmax: 180
 shadowmin: 1
 shadowwarning: 7
@@ -164,20 +230,20 @@ sn: Two
 structuralobjectclass: inetOrgPerson
 uid: admin2
 uidnumber: 3002
-userpassword:: e1NTSEF9ODA2dVJNOGJ4TzVET2o2MkJVUnJnaFpJdmxaVFFVeFU=
+userpassword:: e1NTSEF9WTFHVFd2YS9jSU5uQkxWTHFnenFOTVROMnBDc1hISlU=
 
 dn: uid=auditor1,ou=People,dc=test,dc=org
 cn: auditor1
-createtimestamp: 20210804221111Z
+createtimestamp: 20210812210358Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 displayname: Auditor one
-gidnumber: 7700
+gidnumber: 7001
 givenname: Auditor
 homedirectory: /home/auditor1
 loginshell: /bin/bash
 mail: auditor1@test.local
-modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
-modifytimestamp: 20210804221111Z
+modifiersname: uid=auditor1,ou=People,dc=test,dc=org
+modifytimestamp: 20210812210415Z
 nssshpublickey:: PHNvbWUgU1NIIHB1YmxpYyBrZXk+
 objectclass: inetOrgPerson
 objectclass: posixAccount
@@ -186,8 +252,8 @@ objectclass: shadowAccount
 objectclass: nsAccount
 objectclass: nsPerson
 objectclass: nsOrgPerson
-pwdreset: FALSE
-shadowlastchange: 18839
+pwdhistory: 20210812210415Z#1.3.6.1.4.1.1466.115.121.1.40#38#{SSHA}806uRM8bxO5DOj62BURrghZIvlZTQUxU
+shadowlastchange: 18851
 shadowmax: 180
 shadowmin: 1
 shadowwarning: 7
@@ -195,20 +261,20 @@ sn: one
 structuralobjectclass: inetOrgPerson
 uid: auditor1
 uidnumber: 7001
-userpassword:: e1NTSEF9ODA2dVJNOGJ4TzVET2o2MkJVUnJnaFpJdmxaVFFVeFU=
+userpassword:: e1NTSEF9TTh5cytYUDdyazZWanh1enRhTmpsUWp0eXoxM1RaR3Q=
 
 dn: uid=baduser,ou=People,dc=test,dc=org
 cn: baduser
-createtimestamp: 20210804221111Z
+createtimestamp: 20210812210358Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 displayname: Bad User
-gidnumber: 9999
+gidnumber: 9001
 givenname: Bad
 homedirectory: /home/baduser
 loginshell: /bin/bash
 mail: baduser@test.local
 modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
-modifytimestamp: 20210804221111Z
+modifytimestamp: 20210812210358Z
 nssshpublickey:: PHNvbWUgU1NIIHB1YmxpYyBrZXk+
 objectclass: inetOrgPerson
 objectclass: posixAccount
@@ -218,7 +284,7 @@ objectclass: nsAccount
 objectclass: nsPerson
 objectclass: nsOrgPerson
 pwdreset: FALSE
-shadowlastchange: 18839
+shadowlastchange: 18847
 shadowmax: 180
 shadowmin: 1
 shadowwarning: 7
@@ -230,16 +296,16 @@ userpassword:: e1NTSEF9ODA2dVJNOGJ4TzVET2o2MkJVUnJnaFpJdmxaVFFVeFU=
 
 dn: uid=user1,ou=People,dc=test,dc=org
 cn: user1
-createtimestamp: 20210804221111Z
+createtimestamp: 20210812210358Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 displayname: User One
-gidnumber: 4000
+gidnumber: 4001
 givenname: User
 homedirectory: /home/user1
 loginshell: /bin/bash
 mail: user1@test.local
 modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
-modifytimestamp: 20210804221111Z
+modifytimestamp: 20210812210413Z
 nssshpublickey:: PHNvbWUgU1NIIHB1YmxpYyBrZXk+
 objectclass: inetOrgPerson
 objectclass: posixAccount
@@ -248,8 +314,8 @@ objectclass: shadowAccount
 objectclass: nsAccount
 objectclass: nsPerson
 objectclass: nsOrgPerson
-pwdreset: FALSE
-shadowlastchange: 18839
+pwdreset: TRUE
+shadowlastchange: 18851
 shadowmax: 180
 shadowmin: 1
 shadowwarning: 7
@@ -261,16 +327,16 @@ userpassword:: e1NTSEF9ODA2dVJNOGJ4TzVET2o2MkJVUnJnaFpJdmxaVFFVeFU=
 
 dn: uid=user2,ou=People,dc=test,dc=org
 cn: user2
-createtimestamp: 20210804221111Z
+createtimestamp: 20210812210358Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 displayname: User Two
-gidnumber: 4000
+gidnumber: 4002
 givenname: User
 homedirectory: /home/user2
 loginshell: /bin/bash
 mail: user2@test.local
 modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
-modifytimestamp: 20210804221111Z
+modifytimestamp: 20210812210413Z
 nssshpublickey:: PHNvbWUgU1NIIHB1YmxpYyBrZXk+
 objectclass: inetOrgPerson
 objectclass: posixAccount
@@ -279,8 +345,8 @@ objectclass: shadowAccount
 objectclass: nsAccount
 objectclass: nsPerson
 objectclass: nsOrgPerson
-pwdreset: FALSE
-shadowlastchange: 18839
+pwdreset: TRUE
+shadowlastchange: 18851
 shadowmax: 180
 shadowmin: 1
 shadowwarning: 7

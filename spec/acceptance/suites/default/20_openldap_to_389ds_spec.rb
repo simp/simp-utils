@@ -1,10 +1,10 @@
 require 'spec_helper_acceptance'
-describe 'OpenLDAP to 389ds scripts' do
+describe 'OpenLDAP to 389DS convert and import scripts' do
 
   ldap_server = only_host_with_role(hosts, 'ldap_server')
   ldap_server_fqdn = fact_on(ldap_server, 'fqdn')
 
-  let(:files_dir) { File.join(File.dirname(__FILE__), 'files') }
+  let(:files_dir) { File.join(File.dirname(__FILE__), 'files', 'openldap_to_389ds') }
   let(:scripts_src) { 'share/transition_scripts/openldap_to_389ds' }
   let(:converter) { '/root/openldap_to_389ds.rb' }
   let(:importer) { '/root/import_to_389ds.sh' }
@@ -14,8 +14,8 @@ describe 'OpenLDAP to 389ds scripts' do
   let(:missing_domain_openldap_ldif) { "#{ldif_dir}/missing_domain_simp_openldap.ldif" }
   let(:ds389_ldif) { "#{ldif_dir}/simp_389ds.ldif" }
 
-
   let(:base_dn) { 'dc=test,dc=org' }
+
 
   # Notes:
   # - We tell the users to install simp-utils and rubygem-net-ldap packages
@@ -109,6 +109,7 @@ describe 'OpenLDAP to 389ds scripts' do
         cmd = [
           '/usr/bin/ruby',
           converter,
+          "-i #{openldap_ldif}",
           '-o /does/not/exist/dir/simp_d389ds.ldif',
         ].join(' ')
         on(host, cmd, :acceptable_exit_codes => [1])
@@ -156,65 +157,149 @@ describe 'OpenLDAP to 389ds scripts' do
       "include 'simp_ds389::instances::accounts'"
     }
 
-    context 'simp_ds389::accounts::instance set up' do
-      it 'works with no errors' do
+    shared_examples_for 'an accounts 389DS instance installer' do
+      it 'should ensure hieradata is appropriately set' do
         set_hieradata_on(ldap_server, hieradata)
-        apply_manifest_on(ldap_server, install_ldap_server_manifest, catch_failures: true)
       end
 
-      it 'is idempotent' do
+      it 'should ensure any existing accounts instance is removed' do
+        apply_manifest_on(ldap_server, remove_ldap_server_manifest, catch_failures: true)
+      end
+
+      it 'should apply simp_ds389::accounts::instance with no errors' do
+        apply_manifest_on(ldap_server, install_ldap_server_manifest, catch_failures: true)
         apply_manifest_on(ldap_server, install_ldap_server_manifest, catch_changes: true)
       end
     end
 
-    context 'import into simp_ds389::accounts::instance' do
-      it 'should install import script' do
-        scp_to(ldap_server, "#{scripts_src}/#{File.basename(importer)}", importer)
-        on(ldap_server, "chmod +x #{importer}")
+    shared_examples_for 'a LDAP import validator' do
+      it 'should create a searchable LDAP tree' do
+        # Just verifying a standard ldapsearch from the top of the tree doesn't
+        # fail. This output is also helpful for debug.
+        on(ldap_server, 'ldapsearch -Y EXTERNAL -H ldapi://%2fvar%2frun%2fslapd-accounts.socket')
       end
 
-      it 'should import users and groups into an empty accounts instance using specified LDIF file' do
-        on(ldap_server, "#{importer} #{ds389_ldif}")
-
-        # list the whole tree for debug
-        on(ldap_server, 'ldapsearch -Y EXTERNAL -H ldapi://%2fvar%2frun%2fslapd-accounts.socket')
-
-        user_list = on(ldap_server, "dsidm accounts -b #{base_dn} user list").stdout
-        group_list = on(ldap_server, "dsidm accounts -b #{base_dn} group list").stdout
-
-        [
-          'admin1',   # in admin1 group
-          'admin2',   # in admin2 group
-          'auditor1', # in security group
-          'baduser',  # in NotAllowed group
-          'user1',    # in testuser group
-          'user2',    # in testuser group
-        ].each do |user|
-          expect(user_list).to include(user)
-        end
-
+      it 'should import groups' do
+        group_list = on(ldap_server, "dsidm accounts -b #{base_dn} posixgroup list").stdout
         [
           'NotAllowed',
           'admin1',
           'admin2',
           'administrators',
+          'auditor1',
+          'baduser',
           'security',
           'testgroup',
+          'user1',
+          'user2',
           'users',
         ].each do |group|
           expect(group_list).to include(group)
         end
-
-        # TODO make sure users have correct groups set
       end
 
-      it 'should import users and groups into an empty accounts instance using default LDIF file'
-      it 'should fail if the input file does not exist'
-      it 'should fail if there are no People or Groups in the LDIF to import'
-      it 'should fail to import into an accounts instance with non-empty administrators group'
-      it 'should fail to import into an accounts instance with non-empty users group'
-      it 'should fail if the accounts 389ds instance does not exist'
-      it 'should fail if it cannot find the dsidm command'
+      it 'should import users' do
+        user_list = on(ldap_server, "dsidm accounts -b #{base_dn} user list").stdout
+        [
+          'admin1',   # in admin1, administrators, and users groups
+          'admin2',   # in admin2, administrators, and users groups
+          'auditor1', # in auditor1, security group
+          'baduser',  # in baduser, NotAllowed group
+          'user1',    # in user1, testuser and users group
+          'user2',    # in user1, testuser and users group
+        ].each do |user|
+          expect(user_list).to include(user)
+        end
+      end
+
+      it 'should add members to groups' do
+        {
+          'NotAllowed' => [
+            "member: uid=baduser,ou=Groups,#{base_dn}"
+          ],
+          'administrators' => [
+            "member: uid=admin1,ou=Groups,#{base_dn}",
+            "member: uid=admin2,ou=Groups,#{base_dn}"
+          ],
+          'security' => [
+            "member: uid=auditor1,ou=Groups,#{base_dn}"
+          ],
+          'testgroup' => [
+            "member: uid=user1,ou=Groups,#{base_dn}",
+            "member: uid=user2,ou=Groups,#{base_dn}"
+          ],
+          'users' => [
+            "member: uid=admin1,ou=Groups,#{base_dn}",
+            "member: uid=admin2,ou=Groups,#{base_dn}",
+            "member: uid=user1,ou=Groups,#{base_dn}",
+            "member: uid=user2,ou=Groups,#{base_dn}"
+          ]
+        }.each do |group,member_attrs|
+          group_ldif = on(ldap_server, "dsidm accounts -b #{base_dn} posixgroup get #{group}").stdout
+          member_attrs.each do |member_attr|
+            expect(group_ldif).to match(%r{^#{member_attr}$})
+          end
+        end
+      end
+    end
+
+    context 'import script install' do
+      it 'should install import script' do
+        scp_to(ldap_server, "#{scripts_src}/#{File.basename(importer)}", importer)
+        on(ldap_server, "chmod +x #{importer}")
+      end
+    end
+
+    # usecase that matches the README.md
+    context 'import into a base accounts instance using specified input file' do
+      include_examples 'an accounts 389DS instance installer'
+
+      it 'should execute without error using specified LDIF file' do
+        on(ldap_server, "#{importer} #{ds389_ldif}")
+      end
+
+      include_examples 'a LDAP import validator'
+    end
+
+    context 'import into a base accounts instance using default input file' do
+      include_examples 'an accounts 389DS instance installer'
+
+      it 'should execute without error using default LDIF file' do
+        on(ldap_server, "cd #{ldif_dir}; #{importer}")
+      end
+
+      include_examples 'a LDAP import validator'
+    end
+
+    context 'import failures' do
+      it 'should fail if the input file does not exist' do
+        missing_ldif = '/does/not/exist/simp_ds389.ldif'
+        result = on(ldap_server, "#{importer} #{missing_ldif}", :acceptable_exit_codes => [1])
+        expect(result.stdout).to match(%r{File '#{missing_ldif}' does not exist})
+      end
+
+      it 'should fail if there are no People or Groups in the LDIF to import' do
+        empty_ldif = "#{ldif_dir}/empty_simp_ds389.ldif"
+        on(ldap_server, "touch #{empty_ldif}")
+        result = on(ldap_server, "#{importer} #{empty_ldif}", :acceptable_exit_codes => [1])
+        expect(result.stdout).to match('Could not find any People or Groups')
+      end
+
+      it 'should fail to import into an accounts instance with non-empty users or administrators groups' do
+        # this test **assumes** the account instance is up and had populated the
+        # users and/or administrators groups via a previous, successful import
+        on(ldap_server, "#{importer} #{ds389_ldif}", :acceptable_exit_codes => [1])
+      end
+
+      it 'should fail if the accounts 389ds instance does not exist' do
+        apply_manifest_on(ldap_server, remove_ldap_server_manifest, catch_failures: true)
+        result = on(ldap_server, "#{importer} #{ds389_ldif}", :acceptable_exit_codes => [1])
+      end
+
+      it 'should fail if it cannot find the dsidm command' do
+        # dsidm is in /usr/sbin
+        result = on(ldap_server, "PATH=/usr/bin #{importer} #{ds389_ldif}", :acceptable_exit_codes => [1])
+      end
     end
   end
 end

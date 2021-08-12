@@ -29,13 +29,20 @@ sudo slapcat > /tmp/simp_openldap.ldif
 
 ### Install scripts
 
-Install the scripts and necessary dependencies on the 389-DS server:
+The install scripts are provided by the simp-utils RPM and require the net-ldap
+Ruby gem to be installed for the Ruby instance used by `root` on the 389-DS
+server.
+
+Assuming `root` uses system Ruby on the 389-DS server, install the scripts and
+the net-ldap Ruby gem as follows:
 
 ```
 sudo yum install -y simp-utils rubygem-net-ldap
 ```
 
-The rubygem-net-ldap package is available from the EPEL repository.
+* The rubygem-net-ldap package is available from the EPEL repository.
+* For other Ruby instances, you can install the net-ldap gem using
+  the corresponding `gem` program.
 
 ### Clean and Import the LDIF File
 
@@ -62,5 +69,7 @@ On the 389-DS server:
 
 If all was successful, you can now remove the LDIF files.
 
-A quick way to check is to run `sudo dsidm accounts user list` and make sure
-that your accounts show up as expected.
+A quick way to spot check that the import was successful is to run
+`sudo dsidm accounts -b <base DN> user list` and
+`sudo dsidm accounts -b <base DN> posixgroups list`.
+The user accounts and groups should be listed in that output.

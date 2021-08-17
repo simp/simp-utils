@@ -196,7 +196,7 @@ def sort_noarch(dir, arch)
 #  directory.
 #
   noarchdir = File.expand_path("../noarch", dir )
-  Dir.mkdir(noarchdir, 0750) unless Dir.exists?(noarchdir)
+  FileUtils.mkdir_p(noarchdir, {:mode => 0755})
   Dir.chdir(dir) do
     Dir.glob('*.rpm').each do |rpmfile|
       next if File.symlink?(rpmfile)
@@ -230,6 +230,7 @@ def get_iso_toc(isoinfo)
 end
 
 def create_major_os_version_symlink(target_basedir, versiondir, maj_versiondir)
+  FileUtils.mkdir_p(target_basedir, {:mode => 0755})
   Dir.chdir(target_basedir) do
     if maj_versiondir != versiondir
       from = versiondir

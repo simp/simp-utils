@@ -43,7 +43,7 @@ end
 
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.5.1
+Version: 6.6.0
 Release: %{lua: print(package_release)}
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -96,7 +96,8 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 %attr(0755,-,-) /usr/share/simp/ks/CentOS/repodetect.sh
 %attr(0755,-,-) /usr/share/simp/ks/CentOS/7/diskdetect.sh
 %attr(0755,-,-) /usr/share/simp/ks/CentOS/8/diskdetect.sh
-
+%attr(0750,-,-) %/usr/share/simp/transition_scripts/openldap_to_389ds/openldap_to_389ds.rb
+%attr(0750,-,-) %%/usr/share/simp/transition_scripts/openldap_to_389ds/import_to_389ds.sh
 %post
 # Post installation stuff
 
@@ -104,12 +105,15 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
-* Thu Apr 29 2021 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.5.1-1
+* Fri Jul 23 2021 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.6.0-1
+- Added transition scripts useful for upgrading from SIMP 6.5.0 to SIMP 6.6.0.
+
+* Thu Apr 29 2021 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.6.0-1
 - Update unpack DVD to extract the SIMP repo into
   <destination dir>/SIMP/<os family>/<os version>/ and create the link
   to the major version if it is requested.
 
-* Mon Mar 01 2021 Liz Nemsick <lnemsick.simp@gmail.com> - 6.5.1-1
+* Mon Mar 01 2021 Liz Nemsick <lnemsick.simp@gmail.com> - 6.6.0-1
 - Changed shebang in convert_to_inetorg.rb to use Puppet's Ruby instead
   of system Ruby.
 - Removed upgrade_simp_6.0.0_to_6.1.0 script

@@ -47,7 +47,7 @@ describe 'unpack_dvd script' do
         working_dir = File.join(@tmpdir, target_name)
         @output_dir = File.join(working_dir,'output')
         @tftpboot_dir = File.join(working_dir,'tftpboot')
-        FileUtils.mkdir_p([@output_dir,@tftpboot_dir])
+        FileUtils.mkdir_p([@output_dir, @tftpboot_dir])
       }
       after(:each) do
         FileUtils.remove_entry_secure(@output_dir) if File.directory?(@output_dir)
@@ -124,9 +124,6 @@ describe 'unpack_dvd script' do
           end
         end
       end
-
-
-
     end
   end
 end

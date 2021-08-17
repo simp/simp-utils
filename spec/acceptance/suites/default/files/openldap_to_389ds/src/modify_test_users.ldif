@@ -1,0 +1,30 @@
+dn: cn=users,ou=Group,dc=test,dc=org
+changeType: modify
+add: memberUid
+memberUid: admin1
+memberUid: admin2
+memberUid: user1
+memberUid: user2
+
+dn: cn=administrators,ou=Group,dc=test,dc=org
+changeType: modify
+add: memberUid
+memberUid: admin1
+memberUid: admin2
+
+dn: cn=NotAllowed,ou=Group,dc=test,dc=org
+changeType: modify
+add: memberUid
+memberUid: baduser
+
+dn: cn=testgroup,ou=Group,dc=test,dc=org
+changeType: modify
+add: memberUid
+memberUid: user1
+memberUid: user2
+
+dn: cn=security,ou=Group,dc=test,dc=org
+changeType: modify
+add: memberUid
+memberUid: auditor1
+

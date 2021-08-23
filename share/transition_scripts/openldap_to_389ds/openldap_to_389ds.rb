@@ -36,7 +36,7 @@ DELETE_KEYS = %i[
   sshpublickey
 ].freeze
 
-def convert_group(attrs, groupdn)
+def convert_group(attrs, userdn)
   newattrs = {}
   attrs.each do |a, v|
     newattrs[a] = v.dup
@@ -48,7 +48,7 @@ def convert_group(attrs, groupdn)
     newattrs[a].uniq!
   end
 
-  newattrs[:member] = newattrs[:memberuid].map { |u| "uid=#{u},#{groupdn}" } if newattrs[:memberuid]
+  newattrs[:member] = newattrs[:memberuid].map { |u| "uid=#{u},#{userdn}" } if newattrs[:memberuid]
 
   newattrs.delete_if { |a, _v| DELETE_KEYS.include?(a) }
   newattrs
@@ -192,7 +192,7 @@ ldifs.each do |dn, attr|
   unless attr[:objectclass].member?('organizationalUnit')
     if dn.end_with?(oldgroupdn)
       new_dn = dn.gsub(oldgroupdn, newgroupdn)
-      ldifs389[new_dn] = convert_group(attr, newgroupdn)
+      ldifs389[new_dn] = convert_group(attr, olduserdn)
     elsif dn.end_with?(olduserdn)
       ldifs389[dn] = convert_user(attr)
     end

@@ -14,7 +14,7 @@ createtimestamp: 20210812210358Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 description: "Users not allowed to log in group"
 gidnumber: 9999
-member: uid=baduser,ou=Groups,dc=test,dc=org
+member: uid=baduser,ou=People,dc=test,dc=org
 modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 modifytimestamp: 20210812210358Z
 objectclass: posixGroup
@@ -56,8 +56,8 @@ cn: administrators
 createtimestamp: 20210812201740Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 gidnumber: 700
-member: uid=admin1,ou=Groups,dc=test,dc=org
-member: uid=admin2,ou=Groups,dc=test,dc=org
+member: uid=admin1,ou=People,dc=test,dc=org
+member: uid=admin2,ou=People,dc=test,dc=org
 modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 modifytimestamp: 20210812210358Z
 objectclass: posixGroup
@@ -100,7 +100,7 @@ createtimestamp: 20210812210358Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 description: "The group used for auditors in simp"
 gidnumber: 7700
-member: uid=auditor1,ou=Groups,dc=test,dc=org
+member: uid=auditor1,ou=People,dc=test,dc=org
 modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 modifytimestamp: 20210812210358Z
 objectclass: posixGroup
@@ -115,8 +115,8 @@ createtimestamp: 20210812210358Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 description: "Test group"
 gidnumber: 4000
-member: uid=user1,ou=Groups,dc=test,dc=org
-member: uid=user2,ou=Groups,dc=test,dc=org
+member: uid=user1,ou=People,dc=test,dc=org
+member: uid=user2,ou=People,dc=test,dc=org
 modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 modifytimestamp: 20210812210358Z
 objectclass: posixGroup
@@ -158,10 +158,10 @@ cn: users
 createtimestamp: 20210812201740Z
 creatorsname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 gidnumber: 100
-member: uid=admin1,ou=Groups,dc=test,dc=org
-member: uid=admin2,ou=Groups,dc=test,dc=org
-member: uid=user1,ou=Groups,dc=test,dc=org
-member: uid=user2,ou=Groups,dc=test,dc=org
+member: uid=admin1,ou=People,dc=test,dc=org
+member: uid=admin2,ou=People,dc=test,dc=org
+member: uid=user1,ou=People,dc=test,dc=org
+member: uid=user2,ou=People,dc=test,dc=org
 modifiersname: cn=LDAPAdmin,ou=People,dc=test,dc=org
 modifytimestamp: 20210812210358Z
 objectclass: posixGroup

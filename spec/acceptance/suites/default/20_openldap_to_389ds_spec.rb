@@ -215,24 +215,24 @@ describe 'OpenLDAP to 389DS convert and import scripts' do
       it 'should add members to groups' do
         {
           'NotAllowed' => [
-            "member: uid=baduser,ou=Groups,#{base_dn}"
+            "member: uid=baduser,ou=People,#{base_dn}"
           ],
           'administrators' => [
-            "member: uid=admin1,ou=Groups,#{base_dn}",
-            "member: uid=admin2,ou=Groups,#{base_dn}"
+            "member: uid=admin1,ou=People,#{base_dn}",
+            "member: uid=admin2,ou=People,#{base_dn}"
           ],
           'security' => [
-            "member: uid=auditor1,ou=Groups,#{base_dn}"
+            "member: uid=auditor1,ou=People,#{base_dn}"
           ],
           'testgroup' => [
-            "member: uid=user1,ou=Groups,#{base_dn}",
-            "member: uid=user2,ou=Groups,#{base_dn}"
+            "member: uid=user1,ou=People,#{base_dn}",
+            "member: uid=user2,ou=People,#{base_dn}"
           ],
           'users' => [
-            "member: uid=admin1,ou=Groups,#{base_dn}",
-            "member: uid=admin2,ou=Groups,#{base_dn}",
-            "member: uid=user1,ou=Groups,#{base_dn}",
-            "member: uid=user2,ou=Groups,#{base_dn}"
+            "member: uid=admin1,ou=People,#{base_dn}",
+            "member: uid=admin2,ou=People,#{base_dn}",
+            "member: uid=user1,ou=People,#{base_dn}",
+            "member: uid=user2,ou=People,#{base_dn}"
           ]
         }.each do |group,member_attrs|
           group_ldif = on(ldap_server, "dsidm accounts -b #{base_dn} posixgroup get #{group}").stdout

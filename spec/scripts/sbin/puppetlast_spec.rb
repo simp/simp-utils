@@ -3,6 +3,7 @@ require 'spec_helper'
 require 'uri'
 require 'pry'
 require 'puppetlast'
+require 'net/http'
 
 # puppetlast, as a ruby script with a puppet-provided vendor ruby as a shebang
 #   was difficult or impossible to test, so there was as symlink created in the
@@ -40,14 +41,20 @@ describe 'PuppetLast' do
     skip('this is just an optparse implementation')
   end
 
-  describe 'query_host' do
+  before :each do
+    pl.setup_logger
+
+    pl.stubs(:get_report_dir).returns(File.expand_path('spec/files'))
+  end
+
+  describe 'query_pdb_host' do
     context 'with PuppetDB running' do
       before :each do
         Net::HTTP.stubs(:get).with(URI('http://localhost:8138/pdb/query/v4/nodes/client6.test.net')).returns(client6[:json_doc])
       end
 
       it 'lists data about a specific host from PuppetDB' do
-        expect(pl.query_host('client6.test.net', 8138)).to eq(client6[:json_obj])
+        expect(pl.query_pdb_host('client6.test.net', 8138)).to eq(client6[:json_obj])
       end
 
     end
@@ -60,20 +67,20 @@ ERROR: Connection refused - connect(2) for "localhost" port 8138'
   Please make sure PuppetDB is running, this script is being run from
   the PuppetDB host, and the port is correct
 EOM
-          pl.query_host('client6.test.net', 8138).to
+          pl.query_pdb_host('client6.test.net', 8138).to
           raise_error(RuntimeError, err_msg)
         }
       end
     end
   end
 
-  describe 'query_hosts' do
+  describe 'query_pdb_hosts' do
     context 'with PuppetDB running' do
       before :each do
         Net::HTTP.stubs(:get).with(URI('http://localhost:8138/pdb/query/v4/nodes')).returns(all_hosts[:json_doc])
       end
       it 'lists data for all hosts from PuppetDB' do
-        expect(pl.query_hosts(8138)).to eq(all_hosts[:json_obj])
+        expect(pl.query_pdb_hosts(8138)).to eq(all_hosts[:json_obj])
       end
     end
 
@@ -85,7 +92,7 @@ ERROR: Connection refused - connect(2) for "localhost" port 8138'
   the PuppetDB host, and the port is correct
 EOM
         expect{
-          pl.query_hosts(8138).to
+          pl.query_pdb_hosts(8138).to
           raise_error(RuntimeError, err_msg)
         }
       end
@@ -121,13 +128,15 @@ Usage: puppetlast.rb [options]
 
   -d, --detailed             Show environment and last run status information
   -e, --expiration NUM       Don't show systems that have not checked in for more than NUM days.
-  -P, --port                 The port that PuppetDB is listening on
   -S, --status a,b,c         Return only nodes with statuses: 'failed', 'changed', or 'unchanged'
   -H, --hosts a,b,c          List of hosts (short or long) that you wish to get data on
   -E, --environments a,b,c   List of environments you want to get data from
   -s, --sort-by SORT_OPTION  Sort by a given attribute: 'nil' => unsorted, 'certname' => default, 'time' => last checkin, 'status' => last run status, 'environments' => node environment
   -t, --timeformat TF        Select output time format (seconds, minutes, hours, days)
   -p, --pretty               Format the output more attractively.
+  -P, --port                 The port that PuppetDB is listening on
+  -f, --files-only           Only use the local files, not PuppetDB
+  -l, --log-level level      Set the log level (fatal, error, warn, info, debug)
   -h, --help                 Help Message
 EOF
           expect{ pl.main(['-h']) }.to output(expected).to_stdout
@@ -137,14 +146,15 @@ EOF
 
       context 'no parameters' do
         it 'should print the last time puppet was ran in hours for all in certname order' do
-          expected = <<-EOF
-client3.test.net has no reported check in
-client6.test.net checked in 4286.38 minutes ago
-client7.test.net checked in 1586.38 minutes ago
-client8.test.net checked in 1526.38 minutes ago
-client9.test.net checked in 1466.38 minutes ago
-puppet.test.net checked in 60.00 minutes ago
-EOF
+          expected = <<~EOF
+            client3.test.net has no reported check in
+            client6.test.net checked in 4286.38 minutes ago
+            client7.test.net checked in 1586.38 minutes ago
+            client8.test.net checked in 1526.38 minutes ago
+            client9.test.net checked in 1466.38 minutes ago
+            filehost.test.net checked in 60.01 minutes ago
+            puppet.test.net checked in 60.00 minutes ago
+            EOF
           expect{ pl.main([]) }.to output(expected).to_stdout
           expect( pl.main([]) ).to eq(0)
         end
@@ -153,14 +163,15 @@ EOF
 
       context 'with days instead of minutes' do
         it 'should print the last time puppet was ran in days' do
-          out =<<-EOF
-client3.test.net has no reported check in
-client6.test.net checked in 2.98 days ago
-client7.test.net checked in 1.10 days ago
-client8.test.net checked in 1.06 days ago
-client9.test.net checked in 1.02 days ago
-puppet.test.net checked in 0.04 days ago
-EOF
+          out =<<~EOF
+            client3.test.net has no reported check in
+            client6.test.net checked in 2.98 days ago
+            client7.test.net checked in 1.10 days ago
+            client8.test.net checked in 1.06 days ago
+            client9.test.net checked in 1.02 days ago
+            filehost.test.net checked in 0.04 days ago
+            puppet.test.net checked in 0.04 days ago
+            EOF
           expect{pl.main(['-t','days'])}.to output(out).to_stdout
           expect(pl.main(['-t','days'])).to eq(0)
         end
@@ -169,28 +180,31 @@ EOF
 
       context 'with pretty print' do
         it 'should pretty print the last time puppet was ran' do
-          out =<<-EOF
-client3.test.net has no reported check in
-client6.test.net checked in 4286.38 minutes ago
-client7.test.net checked in 1586.38 minutes ago
-client8.test.net checked in 1526.38 minutes ago
-client9.test.net checked in 1466.38 minutes ago
-puppet.test.net  checked in   60.00 minutes ago
-EOF
+          out =<<~EOF
+            client3.test.net  has no reported check in
+            client6.test.net  checked in 4286.38 minutes ago
+            client7.test.net  checked in 1586.38 minutes ago
+            client8.test.net  checked in 1526.38 minutes ago
+            client9.test.net  checked in 1466.38 minutes ago
+            filehost.test.net checked in   60.01 minutes ago
+            puppet.test.net   checked in   60.00 minutes ago
+            EOF
           expect{pl.main(['-p'])}.to output(out).to_stdout
           expect(pl.main(['-p'])).to eq(0)
         end
       end
       context 'with detailed print' do
         it 'should print the last time puppet was ran and environment and status' do
-          out =<<-EOF
-client3.test.net from environment test has no reported check in
-client6.test.net from environment production checked in 4286.38 minutes ago with status N/A
-client7.test.net from environment production checked in 1586.38 minutes ago with status N/A
-client8.test.net from environment test checked in 1526.38 minutes ago with status changed
-client9.test.net from environment test checked in 1466.38 minutes ago with status failed
-puppet.test.net from environment production checked in 60.00 minutes ago with status changed
-EOF
+          out =<<~EOF
+            client3.test.net from environment test has no reported check in
+            client6.test.net from environment production checked in 4286.38 minutes ago with status N/A
+            client7.test.net from environment production checked in 1586.38 minutes ago with status N/A
+            client8.test.net from environment test checked in 1526.38 minutes ago with status changed
+            client9.test.net from environment test checked in 1466.38 minutes ago with status failed
+            filehost.test.net from environment production checked in 60.01 minutes ago with status changed
+            puppet.test.net from environment production checked in 60.00 minutes ago with status changed
+            EOF
+
           expect{pl.main(['-d'])}.to output(out).to_stdout
           expect(pl.main(['-d'])).to eq(0)
         end
@@ -198,14 +212,15 @@ EOF
 
       context 'certname sorted option' do
         it 'should print in certname order' do
-          expected = <<-EOF
-client3.test.net has no reported check in
-client6.test.net checked in 4286.38 minutes ago
-client7.test.net checked in 1586.38 minutes ago
-client8.test.net checked in 1526.38 minutes ago
-client9.test.net checked in 1466.38 minutes ago
-puppet.test.net checked in 60.00 minutes ago
-EOF
+          expected = <<~EOF
+            client3.test.net has no reported check in
+            client6.test.net checked in 4286.38 minutes ago
+            client7.test.net checked in 1586.38 minutes ago
+            client8.test.net checked in 1526.38 minutes ago
+            client9.test.net checked in 1466.38 minutes ago
+            filehost.test.net checked in 60.01 minutes ago
+            puppet.test.net checked in 60.00 minutes ago
+            EOF
           expect{ pl.main(['-s', 'certname']) }.to output(expected).to_stdout
           expect( pl.main(['-s', 'certname']) ).to eq(0)
         end
@@ -213,14 +228,15 @@ EOF
 
       context 'with pretty print and unsorted option' do
         it 'should align columns and print in db order' do
-          expected = <<-EOF
-puppet.test.net  checked in   60.00 minutes ago
-client6.test.net checked in 4286.38 minutes ago
-client7.test.net checked in 1586.38 minutes ago
-client8.test.net checked in 1526.38 minutes ago
-client9.test.net checked in 1466.38 minutes ago
-client3.test.net has no reported check in
-EOF
+          expected = <<~EOF
+            puppet.test.net   checked in   60.00 minutes ago
+            client6.test.net  checked in 4286.38 minutes ago
+            client7.test.net  checked in 1586.38 minutes ago
+            client8.test.net  checked in 1526.38 minutes ago
+            client9.test.net  checked in 1466.38 minutes ago
+            client3.test.net  has no reported check in
+            filehost.test.net checked in   60.01 minutes ago
+            EOF
           expect{ pl.main(['-p', '-s', 'nil']) }.to output(expected).to_stdout
           expect( pl.main(['-p', '-s', 'nil']) ).to eq(0)
         end
@@ -228,14 +244,15 @@ EOF
 
       context 'with pretty print, detailed print and time-sorted option' do
         it 'should align columns, print details and sort based on checked in time' do
-          expected = <<-EOF
-puppet.test.net  from environment production checked in   60.00 minutes ago with status changed
-client9.test.net from environment test       checked in 1466.38 minutes ago with status failed 
-client8.test.net from environment test       checked in 1526.38 minutes ago with status changed
-client7.test.net from environment production checked in 1586.38 minutes ago with status N/A    
-client6.test.net from environment production checked in 4286.38 minutes ago with status N/A    
-client3.test.net from environment test       has no reported check in
-EOF
+          expected = <<~EOF
+            puppet.test.net   from environment production checked in   60.00 minutes ago with status changed
+            filehost.test.net from environment production checked in   60.01 minutes ago with status changed
+            client9.test.net  from environment test       checked in 1466.38 minutes ago with status failed 
+            client8.test.net  from environment test       checked in 1526.38 minutes ago with status changed
+            client7.test.net  from environment production checked in 1586.38 minutes ago with status N/A    
+            client6.test.net  from environment production checked in 4286.38 minutes ago with status N/A    
+            client3.test.net  from environment test       has no reported check in
+            EOF
           expect{ pl.main(['-p', '-d', '-s', 'time']) }.to output(expected).to_stdout
           expect( pl.main(['-p', '-d', '-s', 'time']) ).to eq(0)
         end
@@ -246,12 +263,12 @@ EOF
         # with different versions of Ruby. So for definitive results,
         # this test specifies only one node of each status type.
         it 'should print details and sort based on status' do
-          expected = <<-EOF
-puppet.test.net from environment production checked in 60.00 minutes ago with status changed
-client9.test.net from environment test checked in 1466.38 minutes ago with status failed
-client7.test.net from environment production checked in 1586.38 minutes ago with status N/A
-EOF
-          args =  [ '-d', '-s', 'status', '--hosts', 
+          expected = <<~EOF
+            puppet.test.net from environment production checked in 60.00 minutes ago with status changed
+            client9.test.net from environment test checked in 1466.38 minutes ago with status failed
+            client7.test.net from environment production checked in 1586.38 minutes ago with status N/A
+            EOF
+          args =  [ '-d', '-s', 'status', '--hosts',
               'puppet.test.net,client7.test.net,client9.test.net' ]
 
           expect{ pl.main(args) }.to output(expected).to_stdout
@@ -268,7 +285,7 @@ EOF
 puppet.test.net from environment production checked in 60.00 minutes ago with status changed
 client9.test.net from environment test checked in 1466.38 minutes ago with status failed
 EOF
-          args =  [ '-d', '-s', 'environment', '--hosts', 
+          args =  [ '-d', '-s', 'environment', '--hosts',
               'puppet.test.net,client9.test.net' ]
 
           expect{ pl.main(args) }.to output(expected).to_stdout
@@ -303,14 +320,15 @@ EOF
           Time.stubs(:now).returns(Time.parse("2016-09-24T15:57:36.320Z"))
         end
         it 'should tell the user their time in the future' do
-          expected = <<-EOF
-client3.test.net has no reported check in
-client6.test.net time issue: 39033.62 minutes in the future
-client7.test.net time issue: 41733.62 minutes in the future
-client8.test.net time issue: 41793.62 minutes in the future
-client9.test.net time issue: 41853.62 minutes in the future
-puppet.test.net time issue: 43260.00 minutes in the future
-EOF
+          expected = <<~EOF
+            client3.test.net has no reported check in
+            client6.test.net time issue: 39033.62 minutes in the future
+            client7.test.net time issue: 41733.62 minutes in the future
+            client8.test.net time issue: 41793.62 minutes in the future
+            client9.test.net time issue: 41853.62 minutes in the future
+            filehost.test.net time issue: 43259.99 minutes in the future
+            puppet.test.net time issue: 43260.00 minutes in the future
+            EOF
           expect{ pl.main([]) }.to output(expected).to_stdout
           expect( pl.main([]) ).to eq(0)
         end
@@ -319,25 +337,27 @@ EOF
 
       context 'for only one environment' do
         it 'should print hosts from the specified environment' do
-          expected = <<-EOF
-client6.test.net checked in 4286.38 minutes ago
-client7.test.net checked in 1586.38 minutes ago
-puppet.test.net checked in 60.00 minutes ago
-EOF
+          expected = <<~EOF
+            client6.test.net checked in 4286.38 minutes ago
+            client7.test.net checked in 1586.38 minutes ago
+            filehost.test.net checked in 60.01 minutes ago
+            puppet.test.net checked in 60.00 minutes ago
+            EOF
           expect{ pl.main(['-E', 'production']) }.to output(expected).to_stdout
           expect( pl.main(['-E', 'production']) ).to eq(0)
         end
       end
       context 'for many environments' do
         it 'should print hosts from the specified environments' do
-          expected = <<-EOF
-client3.test.net has no reported check in
-client6.test.net checked in 4286.38 minutes ago
-client7.test.net checked in 1586.38 minutes ago
-client8.test.net checked in 1526.38 minutes ago
-client9.test.net checked in 1466.38 minutes ago
-puppet.test.net checked in 60.00 minutes ago
-EOF
+          expected = <<~EOF
+            client3.test.net has no reported check in
+            client6.test.net checked in 4286.38 minutes ago
+            client7.test.net checked in 1586.38 minutes ago
+            client8.test.net checked in 1526.38 minutes ago
+            client9.test.net checked in 1466.38 minutes ago
+            filehost.test.net checked in 60.01 minutes ago
+            puppet.test.net checked in 60.00 minutes ago
+            EOF
           expect{ pl.main(['-E', 'production,test']) }.to output(expected).to_stdout
           expect( pl.main(['-E', 'production,test']) ).to eq(0)
         end
@@ -345,15 +365,15 @@ EOF
 
       context 'with only one status' do
         it 'should print hosts from the specified environment' do
-          expected = <<-EOF
-client8.test.net checked in 1526.38 minutes ago
-puppet.test.net checked in 60.00 minutes ago
-EOF
+          expected = <<~EOF
+            client8.test.net checked in 1526.38 minutes ago
+            filehost.test.net checked in 60.01 minutes ago
+            puppet.test.net checked in 60.00 minutes ago
+            EOF
           expect{ pl.main(['-S', 'changed']) }.to output(expected).to_stdout
           expect( pl.main(['-S', 'changed']) ).to eq(0)
         end
       end
-
     end
   end
 end

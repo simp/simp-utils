@@ -43,7 +43,7 @@ end
 
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.6.0
+Version: 6.6.1
 Release: %{lua: print(package_release)}
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -105,6 +105,9 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Wed Sep 01 2021 Trevor Vaughan <tvaughan@onyxpoint.com> - 6.6.1-1
+- Fixed the puppetlast script and enabled it to read from filesystem reports.
+
 * Fri Jul 23 2021 Jeanne Greulich <jeanne.greulichr@onyxpoint.com> - 6.6.0-1
 - Added transition scripts useful for upgrading from SIMP 6.5.0 to SIMP 6.6.0.
 

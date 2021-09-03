@@ -1,19 +1,26 @@
 #!/opt/puppetlabs/puppet/bin/ruby
 #
-# puppetlast queries PuppetDB and returns a list of nodes and the last time the
-# catalog was compiled
-
-require 'uri'
-require 'date'
-require 'puppet'
-require 'facter'
-require 'ostruct'
-require 'optparse'
-require 'net/http'
+# puppetlast queries PuppetDB and local file reports and returns a list of
+# nodes and the last time the catalog was compiled
 
 class PuppetLast
 
+  def setup_logger(log_level='info', force=false)
+    return if (@logger && !force)
+
+    require 'logger'
+
+    @logger = Logger.new($stdout)
+    @logger.level = eval("Logger::#{log_level.upcase}")
+    @logger.formatter = proc do |severity, _datetime, _progname, msg|
+      "#{severity}: #{msg}\n"
+    end
+  end
+
   def parse_options(args)
+    require 'ostruct'
+    require 'optparse'
+
     @options = OpenStruct.new
     @options.detailed     = false
     @options.expiration   = 5
@@ -24,6 +31,7 @@ class PuppetLast
     @options.environments = []
     @options.pretty       = false
     @options.sort_by      = :certname
+    @options.files_only   = false
     # This currently isn't settable...
     @options.round_to     = '.02'
 
@@ -49,20 +57,11 @@ class PuppetLast
         Float,
          "Don't show systems that have not checked in for more than NUM days."
       ) do |exp|
-        if exp == 0 then
+        if exp == 0
           @options.expiration = 99999
         else
           @options.expiration = exp.to_f.abs
         end
-      end
-
-      opts.on(
-        "-P",
-        "--port",
-        Array,
-        "The port that PuppetDB is listening on"
-      ) do |port|
-        @options.port = port
       end
 
       opts.on(
@@ -119,6 +118,32 @@ class PuppetLast
       end
 
       opts.on(
+        "-P",
+        "--port",
+        Array,
+        "The port that PuppetDB is listening on"
+      ) do |port|
+        @options.port = port
+      end
+
+      opts.on(
+        "-f",
+        "--files-only",
+        "Only use the local files, not PuppetDB",
+      ) do |port|
+        @options.files_only = true
+      end
+
+      opts.on(
+        "-l",
+        "--log-level level",
+        ['fatal', 'error', 'warn', 'info', 'debug'],
+        "Set the log level (fatal, error, warn, info, debug)"
+      ) do |log_level|
+        setup_logger(log_level, true)
+      end
+
+      opts.on(
         "-h",
         "--help",
         "Help Message"
@@ -131,17 +156,17 @@ class PuppetLast
     begin
       opts.parse!(args)
     rescue OptionParser::ParseError => e
-      raise "ERROR #{e.message}\n#{opts.to_s}"
+      raise "#{e.message}\n#{opts.to_s}"
     end
 
     case @options.outtime.to_s
-      when /^s.*/ then
+      when /^s.*/
         @options.outtime = 'seconds'
         @options.divisor = 1
-      when /^h.*/ then
+      when /^h.*/
         @options.outtime = 'hours'
         @options.divisor = 1/Float(3600)
-      when /^d.*/ then
+      when /^d.*/
         @options.outtime = 'days'
         @options.divisor = 1/Float(86400)
       else
@@ -153,74 +178,175 @@ class PuppetLast
   end
 
   # grabs info about a particular host from PuppetDB
-  def query_host(certname, port)
+  def query_pdb_host(certname, port)
+    require 'json'
+    require 'uri'
+    require 'net/http'
+
     # TODO move to ssl
     uri = URI("http://localhost:#{port}/pdb/query/v4/nodes/#{certname}")
+
+    @logger.debug("Running PDB query: #{uri}")
 
     begin
       data = JSON.parse(Net::HTTP.get(uri), :symbolize_names => true)
     rescue Exception => e
-      err_msg = "ERROR: #{e}\n" +
+      err_msg = "#{e}\n" +
                 "  Please make sure PuppetDB is running, this script is being run from\n" +
                 "  the PuppetDB host, and the port is correct"
-      raise err_msg
+      @logger.error err_msg
     end
 
-    if data.keys.include? :error then
-      err_msg = "ERROR: Could not retrieve node data for #{certname}" +
+    if data.keys.include? :error
+      err_msg = "Could not retrieve node data for #{certname}" +
                 "  Server Said: #{data}"
-      raise err_msg
+      @logger.error err_msg
     end
+
+    @logger.debug("Received Response: #{data}")
 
     data
   end
 
   # grabs info about all hosts in PuppetDB
-  def query_hosts(port)
+  def query_pdb_hosts(port)
+    require 'json'
+    require 'uri'
+    require 'net/http'
+
     # TODO move to ssl
     uri = URI("http://localhost:#{port}/pdb/query/v4/nodes")
+
+    @logger.debug("Running PDB query: #{uri}")
 
     begin
       data = JSON.parse(Net::HTTP.get(uri), :symbolize_names => true)
     rescue Exception => e
-      err_msg = "ERROR: #{e}\n" +
+      err_msg = "#{e}\n" +
                 "  Please make sure PuppetDB is running, this script is being run from\n" +
                 "  the PuppetDB host, and the port is correct"
-      raise err_msg
+      @logger.error err_msg
     end
+
+    @logger.debug("Received Response: #{data}")
 
     data
   end
 
+  # Update the passed hostlist with the values for the passed hosts.
+  # Updates with all data if hosts is empty
+  def query_files_hosts(hostlist, hosts)
+    report_dir = get_report_dir
+
+    existing_nodes = hostlist.map{|x| x[:certname]}
+
+    local_host_template = {
+      :deactivated=>false,
+      :latest_report_hash=>nil,
+      :facts_environment=>nil,
+      :cached_catalog_status=>"not_used",
+      :report_environment=>nil,
+      :latest_report_corrective_change=>nil,
+      :catalog_environment=>nil,
+      :facts_timestamp=>nil,
+      :latest_report_noop=>nil,
+      :expired=>false,
+      :latest_report_noop_pending=>nil,
+      :report_timestamp=>nil,
+      :certname=>nil,
+      :catalog_timestamp=>nil,
+      :latest_report_job_id=>nil,
+      :latest_report_status=>nil
+    }.freeze
+
+    local_host_reports = []
+
+    if File.directory?(report_dir)
+      @logger.debug("Processing Report Directory: #{report_dir}")
+
+      Dir.glob("#{report_dir}/*").each do |node_dir|
+        @logger.debug("Processing Node Directory: #{node_dir}")
+
+        latest_report = Dir.glob("#{node_dir}/*.yaml").sort.last
+        if latest_report
+          @logger.debug("Processing YAML Report: #{latest_report}")
+
+          begin
+            require 'puppet'
+
+            transaction_report = YAML.load_file(latest_report)
+
+            unless (hosts.empty? || hosts.include?(transaction_report.host))
+              @logger.debug("Skipping #{transaction_report.host} since it is not in the host list")
+              next
+            end
+
+            if existing_nodes.include?(transaction_report.host)
+              @logger.debug("Skipping #{transaction_report.host} since it already exists")
+              next
+            end
+
+            local_host_data = Marshal.load(Marshal.dump(local_host_template))
+            local_host_data[:latest_report_hash] = transaction_report.catalog_uuid
+            local_host_data[:facts_environment] = transaction_report.environment
+            local_host_data[:report_environment] = transaction_report.environment
+            local_host_data[:latest_report_corrective_change] = transaction_report.corrective_change
+            local_host_data[:catalog_environment] = transaction_report.environment
+            local_host_data[:facts_timestamp] = transaction_report.time.to_s
+            local_host_data[:latest_report_noop] = transaction_report.noop
+            local_host_data[:latest_report_noop_pending] = transaction_report.noop_pending
+            local_host_data[:report_timestamp] = transaction_report.time.to_s
+            local_host_data[:certname] = transaction_report.host
+            local_host_data[:catalog_timestamp] = transaction_report.time.to_s
+            local_host_data[:latest_report_job_id] = transaction_report.catalog_uuid
+            local_host_data[:latest_report_status] = transaction_report.status
+
+            hostlist << local_host_data
+
+            @logger.debug("Processed Host Report: #{local_host_data}")
+          rescue => e
+            @logger.warn "Error processing report at '#{latest_report}': #{e}"
+          end
+        else
+          @logger.debug "Could not find latest report in '#{node_dir}'"
+        end
+      end
+    else
+      @logger.debug "Could not find report directory at '#{report_dir}'"
+    end
+  end
+
   # take the PuppetDB scehema and transform it into useful info for us
   def transform_hosts(hosts)
+    require 'time'
+
     node_data = []
 
     hosts.each do |host|
-      if host[:catalog_timestamp].nil?
+      if host[:report_timestamp].nil?
         # This can happen in weird cases. Mark as an expired node, so
         # the expired logic doesn't try to do math on a nil timestamp.
         last_checkin = nil
         formatted_checkin = 'N/A'
         host[:expired] = nil
       else
-        last_checkin = Time.now - Time.parse(host[:catalog_timestamp])
+        last_checkin = Time.now - Time.parse(host[:report_timestamp])
         formatted_checkin = sprintf("%#{@options.round_to}f",(last_checkin * @options.divisor).abs)
       end
       node_data << {
         :last_checkin => last_checkin,
         :expired      => host[:expired].nil? ? false : host[:expired],
         :certname     => host[:certname],
-        :environment  => host[:catalog_environment].nil? ? 'N/A' : host[:catalog_environment],
+        :environment  => host[:report_environment].nil? ? 'N/A' : host[:report_environment],
         :status       => host[:latest_report_status].nil? ? 'N/A' : host[:latest_report_status],
         :formatted_checkin => formatted_checkin
       }
     end
 
-    if not @options.environments.empty?
+    unless @options.environments.empty?
       node_data.delete_if {|node| not @options.environments.include? node[:environment] }
     end
-    if not @options.statuses.empty?
+    unless @options.statuses.empty?
       node_data.delete_if {|node| not @options.statuses.include? node[:status] }
     end
 
@@ -280,8 +406,8 @@ class PuppetLast
       end
     end
 
-    if node[:last_checkin].to_s =~ /e/ then
-      puts "#{node[:certname]} outside the bounds of time and space"
+    if node[:last_checkin].to_s =~ /e/
+      @logger.warn "#{node[:certname]} outside the bounds of time and space"
     else
       if @options.detailed
         printf(msg,
@@ -302,17 +428,24 @@ class PuppetLast
   end
 
   def main(args)
+    setup_logger
+
     parse_options(args)
     return 0 if @options.help_requested
 
     hostlist = []
-    if @options.hosts.empty? then
-      hostlist = query_hosts( @options.port )
-    else
-      @options.hosts.each do |host|
-        hostlist << query_host( host, @options.port )
+
+    unless @options.files_only
+      if @options.hosts.empty?
+        hostlist = query_pdb_hosts( @options.port ) || []
+      else
+        @options.hosts.each do |host|
+          hostlist << query_pdb_host( host, @options.port )
+        end
       end
     end
+
+    query_files_hosts(hostlist, @options.hosts)
 
     node_data = transform_hosts( hostlist )
     return 1 if node_data.size == 0
@@ -331,7 +464,7 @@ class PuppetLast
       # expired nodes aren't included when returning all nodes from PuppetDB,
       # but users can specify nodes manually
       if node[:expired]
-        puts "#{node[:certname]} expired"
+        @logger.info "#{node[:certname]} expired"
       else
         if node[:last_checkin].nil?
           print_node_without_checkin(node, col_len)
@@ -343,21 +476,26 @@ class PuppetLast
     return 0
   rescue SignalException =>e
     if e.inspect == 'Interrupt'
-      $stderr.puts "\nProcessing interrupted! Exiting."
+      @logger.fatal "\nProcessing interrupted! Exiting."
     else
-      $stderr.puts "\nProcess received signal #{e.message}. Exiting!"
-      e.backtrace.first(10).each{|l| $stderr.puts l }
+      @logger.fatal "\nProcess received signal #{e.message}. Exiting!"
+      e.backtrace.first(10).each{|l| @logger.fatal l }
     end
     return 1
   rescue RuntimeError =>e
-    $stderr.puts(e.message)
+    @logger.error(e.message)
     return 1
   rescue => e
-    $stderr.puts("\n#{e.message}")
-    e.backtrace.first(10).each{|l| $stderr.puts l }
+    @logger.error("\n#{e.message}")
+    e.backtrace.first(10).each{|l| @logger.error l }
     return 1
   end
 
+  private
+
+  def get_report_dir
+    %x{puppet config print reportdir}.strip
+  end
 end
 
 if __FILE__ == $0

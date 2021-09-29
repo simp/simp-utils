@@ -181,7 +181,7 @@ def update_yum_repo(repo, group)
       begin
         FileUtils.chmod('g+s',dir)
       rescue Exception => e
-        $stderr.puts("WARNING: Could  not set group id permission on #{dir} 'g+s'.")
+        $stderr.puts("WARNING: Could not set group id permission on #{dir} 'g+s'.")
         $stderr.puts(e)
       end
     }
@@ -231,13 +231,14 @@ end
 
 def create_major_os_version_symlink(target_basedir, versiondir, maj_versiondir)
   FileUtils.mkdir_p(target_basedir, {:mode => 0755})
+
   Dir.chdir(target_basedir) do
     if maj_versiondir != versiondir
       from = versiondir
       to   = maj_versiondir
       puts "Linking #{from} to #{to}"
       FileUtils.rm(to) if File.symlink?(to)
-      FileUtils.ln_sf(from,to)
+      FileUtils.ln_sf(from,to) if ( File.exist?(from) && !File.directory?(to) )
     end
   end
 end
@@ -245,20 +246,26 @@ end
 def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
   puts "Unpacking RPM packages from #{discattrs[:path]}...", ''
 
-  iso_toc   = get_iso_toc(isoinfo)
-  kill_dirs = iso_toc.map{ |x| File.dirname( x ) }.uniq
-  iso_toc   = iso_toc - kill_dirs
-  destdir   = "#{options[:dest]}/#{discattrs[:family]}/#{versiondir}/#{discattrs[:arch]}/"
-  simpdir   = "#{options[:dest]}/SIMP/#{discattrs[:family]}/#{versiondir}/#{discattrs[:arch]}/"
+  iso_toc         = get_iso_toc(isoinfo)
+  kill_dirs       = iso_toc.map{ |x| File.dirname( x ) }.uniq
+  iso_toc         = iso_toc - kill_dirs
+  distdir         = "#{options[:dest]}/#{discattrs[:family]}/#{versiondir}/#{discattrs[:arch]}/"
+  simpdir         = "#{options[:dest]}/SIMP/#{discattrs[:family]}/#{versiondir}/#{discattrs[:arch]}/"
+  simp_yum_update = true
 
   progress  = ProgressBar.new(iso_toc.size)
 
   iso_toc.each do |iso_entry|
-    if iso_entry =~ /^\/SIMP/
+    # SIMP 6.6.0 EL8+
+    if iso_entry =~ %r{^/SimpRepos/(.+)}
+      target = $1
+      simp_yum_update = false
+    elsif iso_entry =~ %r{^/SIMP/}
       target = "#{simpdir}#{File.basename(iso_entry)}"
     else
-      target = "#{destdir}#{iso_entry}"
+      target = "#{distdir}#{iso_entry}"
     end
+
     begin
       FileUtils.mkdir_p(File.dirname(target))
     rescue Exception => e
@@ -272,14 +279,18 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
     progress.report
   end
 
-  puts "Unpacking RPM packages complete, updating yum repositories...."
+  puts 'Unpacking files complete'
+  puts 'Updating yum repositories....'
 
-  if File.directory?(simpdir)
-    sort_noarch(simpdir,discattrs[:arch] )
-    update_yum_repo(simpdir, options[:group]) unless (simpdir == destdir)
+  if simp_yum_update
+
+    if File.directory?(simpdir)
+      sort_noarch(simpdir,discattrs[:arch] )
+      update_yum_repo(simpdir, options[:group]) unless (simpdir == distdir)
+    end
   end
 
-  update_yum_repo("#{destdir}/Updates", options[:group])
+  update_yum_repo("#{distdir}/Updates", options[:group])
   puts "Yum repo creation complete"
 
   if options[:create_major_os_symlink]

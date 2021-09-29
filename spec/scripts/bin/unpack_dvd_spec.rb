@@ -96,11 +96,13 @@ describe 'unpack_dvd script' do
 
         context 'with -v x.y.z' do
           let(:cmd){ "#{super()} -v #{os_version_xyz}" }
+
           it('executes without failures'){ expect(exit_status).to eq 0 }
           it 'creates a populated Updates/repodata' do
             glob = File.join(output_dir, os, os_version_xyz, '**', 'Updates', 'repodata', '*')
             expect( Dir.glob(glob).grep(/repomd\.xml$/)).not_to be_empty
           end
+
           it "symlinks yum repo [os_version] to [os_version_xyz]" do
             src = File.join(output_dir, os, os_version_xyz)
             symlink = File.join(output_dir, os, os_version)

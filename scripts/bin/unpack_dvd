@@ -259,8 +259,8 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
   puts "Unpacking RPM packages from #{discattrs[:path]}...", ''
 
   # Bail if we're trying to unpack into an old-format directory
-  legacy_repodata = File.join(options[:dest],'SIMP','repodata')
-  if File.directory?(legacy_repodata)
+  legacy_repodata = Dir.glob(File.join(options[:dest],'SIMP','*','repodata'))
+  unless legacy_repodata.empty?
     puts "Error: '#{File.dirname(legacy_repodata)}' is in the legacy layout!"
     puts '  * Please see the documentation on migrating to the new layout and try again'
     puts '  * Hint: The new layout places the directories under OS-specific subdirectories'

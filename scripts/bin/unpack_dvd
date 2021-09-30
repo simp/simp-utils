@@ -258,7 +258,7 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
   iso_toc.each do |iso_entry|
     # SIMP 6.6.0 EL8+
     if iso_entry =~ %r{^/SimpRepos/(.+)}
-      target = $1
+      target = "#{simpdir}/$1"
       simp_yum_update = false
     elsif iso_entry =~ %r{^/SIMP/}
       target = "#{simpdir}#{File.basename(iso_entry)}"
@@ -279,6 +279,7 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
     progress.report
   end
 
+  puts ''
   puts 'Unpacking files complete'
   puts 'Updating yum repositories....'
 

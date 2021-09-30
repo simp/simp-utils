@@ -126,12 +126,24 @@ def update_yum_repo(repo, group)
   puts "Updating repo at #{repo}"
   FileUtils.mkdir_p(repo,{:mode => 0755})
   Dir.chdir(repo) do
-    Find.find('../') do |path|
-      Find.prune if File.basename(path) == File.basename(repo)
+    discovered_repos = Dir.glob(File.join('..', '**', 'repomd.xml'))
+    discovered_repos.map! do |x|
+      x.split(File::SEPARATOR)[0...2].join(File::SEPARATOR)
+    end
+    discovered_repos.delete_if{|x| File.basename(x) == File.basename(repo)}
 
-      if File.basename(path) =~ /.*\.rpm/ and not File.symlink?(File.basename(path))
-        full_path = File.dirname(File.expand_path(path))
-        FileUtils.ln_sf(path,File.basename(path))
+    discovered_modular_repos = Dir.glob(File.join('..', '**', 'repodata', '*module*'))
+    discovered_modular_repos.map! do |x|
+      x.split(File::SEPARATOR)[0...2].join(File::SEPARATOR)
+    end
+
+    (discovered_repos - discovered_modular_repos).each do |path|
+      Dir.glob(File.join(path, '**', '*.rpm')) do |rpm_file|
+        next if File.symlink?(File.basename(rpm_file))
+
+        full_path = File.dirname(File.expand_path(rpm_file))
+
+        FileUtils.ln_sf(rpm_file, File.basename(rpm_file))
         repo_dirs << full_path unless repo_dirs.include?(full_path)
       end
     end
@@ -246,20 +258,43 @@ end
 def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
   puts "Unpacking RPM packages from #{discattrs[:path]}...", ''
 
+  # Bail if we're trying to unpack into an old-format directory
+  legacy_repodata = File.join(options[:dest],'SIMP','repodata')
+  if File.directory?(legacy_repodata)
+    puts "Error: '#{File.dirname(legacy_repodata)}' is in the legacy layout!"
+    puts '  * Please see the documentation on migrating to the new layout and try again'
+    puts '  * Hint: The new layout places the directories under OS-specific subdirectories'
+
+    exit 1
+  end
+
   iso_toc         = get_iso_toc(isoinfo)
   kill_dirs       = iso_toc.map{ |x| File.dirname( x ) }.uniq
   iso_toc         = iso_toc - kill_dirs
-  distdir         = "#{options[:dest]}/#{discattrs[:family]}/#{versiondir}/#{discattrs[:arch]}/"
-  simpdir         = "#{options[:dest]}/SIMP/#{discattrs[:family]}/#{versiondir}/#{discattrs[:arch]}/"
-  simp_yum_update = true
+  distdir         = File.join(
+    options[:dest],
+    discattrs[:family],
+    versiondir,
+    discattrs[:arch],
+    ''
+  )
+  simpdir         = File.join(
+    options[:dest],
+    'SIMP',
+    discattrs[:family],
+    versiondir,
+    discattrs[:arch],
+    ''
+  )
+  simp_old_iso = true
 
   progress  = ProgressBar.new(iso_toc.size)
 
   iso_toc.each do |iso_entry|
     # SIMP 6.6.0 EL8+
     if iso_entry =~ %r{^/SimpRepos/(.+)}
-      target = "#{simpdir}/$1"
-      simp_yum_update = false
+      target = File.join(simpdir, $1)
+      simp_old_iso = false
     elsif iso_entry =~ %r{^/SIMP/}
       target = "#{simpdir}#{File.basename(iso_entry)}"
     else
@@ -274,7 +309,15 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
       puts "This is the target: #{target}"
       puts "This is the target dirname: #{File.dirname(target)}"
     end
-    system("#{isoinfo} -R -x #{iso_entry} > #{target}")
+
+    if !File.exist?(target) || File.stat(target).size.zero?
+      system("#{isoinfo} -R -x #{iso_entry} > #{target}")
+    end
+
+    # Remove size 0 files because they may actually be directories to hold other
+    # files and are not really useful in general
+    FileUtils.rm_f(target) if File.stat(target).size.zero?
+
     progress.advance
     progress.report
   end
@@ -283,8 +326,7 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
   puts 'Unpacking files complete'
   puts 'Updating yum repositories....'
 
-  if simp_yum_update
-
+  if simp_old_iso
     if File.directory?(simpdir)
       sort_noarch(simpdir,discattrs[:arch] )
       update_yum_repo(simpdir, options[:group]) unless (simpdir == distdir)

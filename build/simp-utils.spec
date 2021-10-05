@@ -61,7 +61,7 @@ Requires: genisoimage
 Requires: rpm
 Requires: yum
 Requires: yum-utils
-%end
+%endif
 Provides: simp_utils
 Obsoletes: simp_utils
 BuildArch: noarch

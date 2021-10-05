@@ -43,17 +43,25 @@ end
 
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.6.1
+Version: 6.6.2
 Release: %{lua: print(package_release)}
 License: Apache License, Version 2.0
 Group: Applications/System
 Source: %{name}-%{version}-%{release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
+%if 0%{?rhel} > 7
+Recommends: puppet-agent >= 6.22.1
+Recommends: genisoimage
+Recommends: rpm
+Recommends: yum
+Recommends: yum-utils
+%else
 Requires: puppet-agent >= 6.22.1
 Requires: genisoimage
 Requires: rpm
 Requires: yum
 Requires: yum-utils
+%end
 Provides: simp_utils
 Obsoletes: simp_utils
 BuildArch: noarch
@@ -105,6 +113,9 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Tue Oct 05 2021 Trevor Vaughan <tvaughan@onyxpoint.com> - 6.6.2-1
+- Fixed dependencies for EL8 systems
+
 * Wed Sep 01 2021 Trevor Vaughan <tvaughan@onyxpoint.com> - 6.6.1-1
 - Fixed the puppetlast script and enabled it to read from filesystem reports.
 

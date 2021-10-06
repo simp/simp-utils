@@ -119,6 +119,7 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
   exported repos
 - Fixed a bug where a symlink would be created in a versioned ISO directory if
   it was present as a directory instead of a symlink to be replaced
+- Updated the kickstart files in the share directory
 
 * Wed Sep 01 2021 Trevor Vaughan <tvaughan@onyxpoint.com> - 6.6.1-1
 - Fixed the puppetlast script and enabled it to read from filesystem reports.

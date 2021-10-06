@@ -61,7 +61,7 @@ Requires: genisoimage
 Requires: rpm
 Requires: yum
 Requires: yum-utils
-%end
+%endif
 Provides: simp_utils
 Obsoletes: simp_utils
 BuildArch: noarch
@@ -115,6 +115,7 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 %changelog
 * Tue Oct 05 2021 Trevor Vaughan <tvaughan@onyxpoint.com> - 6.6.2-1
 - Fixed dependencies for EL8 systems
+- Update the kickstart files in the share directory
 
 * Wed Sep 01 2021 Trevor Vaughan <tvaughan@onyxpoint.com> - 6.6.1-1
 - Fixed the puppetlast script and enabled it to read from filesystem reports.

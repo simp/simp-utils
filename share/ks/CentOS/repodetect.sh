@@ -4,11 +4,11 @@
 #
 # Usage: repodetect.sh VERSION [YUM_SERVER] [LINUX_DIST]
 #
-#   VERSION     Major OS version number (e.g., '8', '7', '6')
+#   VERSION     Major OS version number (e.g., '8', '7')
 #   YUM_SERVER  (Optional) empty, 'local', or a URI of a yum server
 #   LINUX_DIST  (Optional) Forces Linux  distro (e.g., 'CentOS', 'RedHat')
 #
-# Supported OSes: LINUX_DIST: [CentOS, RedHat],  VERSION: [6, 7, 8]
+# Supported OSes: LINUX_DIST: [CentOS, RedHat],  VERSION: [7, 8]
 #
 
 unknown="REPODETECT_UNKNOWN_OS_TYPE"
@@ -47,7 +47,7 @@ fi
 
 if [ -z "$yum_server" ] || [ "$yum_server" == 'local' ]; then
   uri_header="file:///mnt/source"
-  if [ "$version" == "7"]; then
+  if [ "$version" == "7" ]; then
     local_header=$uri_header/SIMP/$arch
   else
     local_header="$uri_header/SimpRepos"

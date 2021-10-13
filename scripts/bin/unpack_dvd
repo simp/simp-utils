@@ -248,9 +248,13 @@ def create_major_os_version_symlink(target_basedir, versiondir, maj_versiondir)
     if maj_versiondir != versiondir
       from = versiondir
       to   = maj_versiondir
-      puts "Linking #{from} to #{to}"
-      FileUtils.rm(to) if File.symlink?(to)
-      FileUtils.ln_sf(from,to) if ( File.exist?(from) && !File.directory?(to) )
+
+      if File.exist?(from)
+        puts "Linking #{from} to #{to} in '#{target_basedir}'"
+
+        FileUtils.rm(to) if File.symlink?(to)
+        FileUtils.ln_sf(from, to) unless File.directory?(to)
+      end
     end
   end
 end

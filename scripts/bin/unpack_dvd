@@ -130,6 +130,12 @@ def update_yum_repo(repo, group)
     discovered_repos.map! do |x|
       x.split(File::SEPARATOR)[0...2].join(File::SEPARATOR)
     end
+
+    # Add RPM-only directories
+    rpm_only_dirs = Dir.glob(File.join('..', '**', '*.rpm')).map{|x| File.split(x).first}.uniq
+    rpm_only_dirs.delete_if{|x| discovered_repos.find{|y| x =~ %r{^#{Regexp.escape(y)}}}}
+    discovered_repos += rpm_only_dirs
+
     discovered_repos.delete_if{|x| File.basename(x) == File.basename(repo)}
 
     discovered_modular_repos = Dir.glob(File.join('..', '**', 'repodata', '*module*'))

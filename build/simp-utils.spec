@@ -43,8 +43,8 @@ end
 
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.6.2
-Release: %{lua: print(package_release)}
+Version: 6.7.0
+Release: %{lua: print(package_release)}%{?dist}
 License: Apache License, Version 2.0
 Group: Applications/System
 Source: %{name}-%{version}-%{release}.tar.gz
@@ -113,9 +113,13 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
-* Tue Oct 05 2021 Trevor Vaughan <tvaughan@onyxpoint.com> - 6.6.2-1
+* Wed Sep 29 2021 Trevor Vaughan <tvaughan@onyxpoint.com> - 6.7.0-1
 - Fixed dependencies for EL8 systems
-- Update the kickstart files in the share directory
+- Updated unpack_dvd to handle the new SIMP ISO layout and not break the
+  exported repos
+- Fixed a bug where a symlink would be created in a versioned ISO directory if
+  it was present as a directory instead of a symlink to be replaced
+- Updated the kickstart files in the share directory
 
 * Wed Sep 01 2021 Trevor Vaughan <tvaughan@onyxpoint.com> - 6.6.1-1
 - Fixed the puppetlast script and enabled it to read from filesystem reports.

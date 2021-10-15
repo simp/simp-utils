@@ -126,12 +126,30 @@ def update_yum_repo(repo, group)
   puts "Updating repo at #{repo}"
   FileUtils.mkdir_p(repo,{:mode => 0755})
   Dir.chdir(repo) do
-    Find.find('../') do |path|
-      Find.prune if File.basename(path) == File.basename(repo)
+    discovered_repos = Dir.glob(File.join('..', '**', 'repomd.xml'))
+    discovered_repos.map! do |x|
+      x.split(File::SEPARATOR)[0...2].join(File::SEPARATOR)
+    end
 
-      if File.basename(path) =~ /.*\.rpm/ and not File.symlink?(File.basename(path))
-        full_path = File.dirname(File.expand_path(path))
-        FileUtils.ln_sf(path,File.basename(path))
+    # Add RPM-only directories
+    rpm_only_dirs = Dir.glob(File.join('..', '**', '*.rpm')).map{|x| File.split(x).first}.uniq
+    rpm_only_dirs.delete_if{|x| discovered_repos.find{|y| x =~ %r{^#{Regexp.escape(y)}}}}
+    discovered_repos += rpm_only_dirs
+
+    discovered_repos.delete_if{|x| File.basename(x) == File.basename(repo)}
+
+    discovered_modular_repos = Dir.glob(File.join('..', '**', 'repodata', '*module*'))
+    discovered_modular_repos.map! do |x|
+      x.split(File::SEPARATOR)[0...2].join(File::SEPARATOR)
+    end
+
+    (discovered_repos - discovered_modular_repos).each do |path|
+      Dir.glob(File.join(path, '**', '*.rpm')) do |rpm_file|
+        next if File.symlink?(File.basename(rpm_file))
+
+        full_path = File.dirname(File.expand_path(rpm_file))
+
+        FileUtils.ln_sf(rpm_file, File.basename(rpm_file))
         repo_dirs << full_path unless repo_dirs.include?(full_path)
       end
     end
@@ -181,7 +199,7 @@ def update_yum_repo(repo, group)
       begin
         FileUtils.chmod('g+s',dir)
       rescue Exception => e
-        $stderr.puts("WARNING: Could  not set group id permission on #{dir} 'g+s'.")
+        $stderr.puts("WARNING: Could not set group id permission on #{dir} 'g+s'.")
         $stderr.puts(e)
       end
     }
@@ -231,13 +249,18 @@ end
 
 def create_major_os_version_symlink(target_basedir, versiondir, maj_versiondir)
   FileUtils.mkdir_p(target_basedir, {:mode => 0755})
+
   Dir.chdir(target_basedir) do
     if maj_versiondir != versiondir
       from = versiondir
       to   = maj_versiondir
-      puts "Linking #{from} to #{to}"
-      FileUtils.rm(to) if File.symlink?(to)
-      FileUtils.ln_sf(from,to)
+
+      if File.exist?(from)
+        puts "Linking #{from} to #{to} in '#{target_basedir}'"
+
+        FileUtils.rm(to) if File.symlink?(to)
+        FileUtils.ln_sf(from, to) unless File.directory?(to)
+      end
     end
   end
 end
@@ -245,41 +268,88 @@ end
 def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
   puts "Unpacking RPM packages from #{discattrs[:path]}...", ''
 
-  iso_toc   = get_iso_toc(isoinfo)
-  kill_dirs = iso_toc.map{ |x| File.dirname( x ) }.uniq
-  iso_toc   = iso_toc - kill_dirs
-  destdir   = "#{options[:dest]}/#{discattrs[:family]}/#{versiondir}/#{discattrs[:arch]}/"
-  simpdir   = "#{options[:dest]}/SIMP/#{discattrs[:family]}/#{versiondir}/#{discattrs[:arch]}/"
+  # Bail if we're trying to unpack into an old-format directory
+  legacy_repodata = Dir.glob(File.join(options[:dest],'SIMP','*','repodata'))
+  unless legacy_repodata.empty?
+    puts "Error: '#{File.dirname(legacy_repodata)}' is in the legacy layout!"
+    puts '  * Please see the documentation on migrating to the new layout and try again'
+    puts '  * Hint: The new layout places the directories under OS-specific subdirectories'
+
+    exit 1
+  end
+
+  iso_toc         = get_iso_toc(isoinfo)
+  kill_dirs       = iso_toc.map{ |x| File.dirname( x ) }.uniq
+  iso_toc         = iso_toc - kill_dirs
+  distdir         = File.join(
+    options[:dest],
+    discattrs[:family],
+    versiondir,
+    discattrs[:arch],
+    ''
+  )
+  simpdir         = File.join(
+    options[:dest],
+    'SIMP',
+    discattrs[:family],
+    versiondir,
+    discattrs[:arch],
+    ''
+  )
+  simp_old_iso = true
 
   progress  = ProgressBar.new(iso_toc.size)
 
+  skip_list = [
+    'TRANS.TBL'
+  ]
+
   iso_toc.each do |iso_entry|
-    if iso_entry =~ /^\/SIMP/
-      target = "#{simpdir}#{File.basename(iso_entry)}"
-    else
-      target = "#{destdir}#{iso_entry}"
+    unless skip_list.include?(File.split(iso_entry).last)
+      # SIMP 6.6.0 EL8+
+      if iso_entry =~ %r{^/SimpRepos/(.+)}
+        target = File.join(simpdir, $1)
+        simp_old_iso = false
+      elsif iso_entry =~ %r{^/SIMP/}
+        target = "#{simpdir}#{File.basename(iso_entry)}"
+      else
+        target = "#{distdir}#{iso_entry}"
+      end
+
+      begin
+        FileUtils.mkdir_p(File.dirname(target))
+      rescue Exception => e
+        warn "#{e.class}: #{e.message}"
+        puts "This is iso_toc: #{iso_entry}"
+        puts "This is the target: #{target}"
+        puts "This is the target dirname: #{File.dirname(target)}"
+      end
+
+      if !File.exist?(target) || File.stat(target).size.zero?
+        system("#{isoinfo} -R -x #{iso_entry} > #{target}")
+      end
+
+      # Remove size 0 files because they may actually be directories to hold other
+      # files and are not really useful in general
+      FileUtils.rm_f(target) if File.stat(target).size.zero?
     end
-    begin
-      FileUtils.mkdir_p(File.dirname(target))
-    rescue Exception => e
-      warn "#{e.class}: #{e.message}"
-      puts "This is iso_toc: #{iso_entry}"
-      puts "This is the target: #{target}"
-      puts "This is the target dirname: #{File.dirname(target)}"
-    end
-    system("#{isoinfo} -R -x #{iso_entry} > #{target}")
+
     progress.advance
     progress.report
   end
 
-  puts "Unpacking RPM packages complete, updating yum repositories...."
+  puts ''
+  puts 'Unpacking files complete'
+  puts 'Updating yum repositories....'
 
-  if File.directory?(simpdir)
-    sort_noarch(simpdir,discattrs[:arch] )
-    update_yum_repo(simpdir, options[:group]) unless (simpdir == destdir)
+  if simp_old_iso
+    if File.directory?(simpdir)
+      sort_noarch(simpdir,discattrs[:arch] )
+      update_yum_repo(simpdir, options[:group]) unless (simpdir == distdir)
+    end
   end
 
-  update_yum_repo("#{destdir}/Updates", options[:group])
+  update_yum_repo("#{distdir}/Updates", options[:group])
   puts "Yum repo creation complete"
 
   if options[:create_major_os_symlink]

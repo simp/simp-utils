@@ -43,7 +43,7 @@ end
 
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.7.0
+Version: 6.7.1
 Release: %{lua: print(package_release)}%{?dist}
 License: Apache License, Version 2.0
 Group: Applications/System

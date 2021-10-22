@@ -9,6 +9,7 @@ group :test do
   gem 'simplecov'
   gem 'mocha'
   gem 'simp-rake-helpers', ENV['SIMP_RAKE_HELPERS_VERSION'] || ['>= 5.11.5', '< 6']
+  gem 'pathspec', '~> 0.2' if Gem::Requirement.create('< 2.6').satisfied_by?(Gem::Version.new(RUBY_VERSION.dup))
 
 
   gem 'pry'

@@ -43,20 +43,20 @@ end
 
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.7.0
+Version: 6.7.1
 Release: %{lua: print(package_release)}%{?dist}
 License: Apache License, Version 2.0
 Group: Applications/System
 Source: %{name}-%{version}-%{release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 %if 0%{?rhel} > 7
-Recommends: puppet-agent >= 6.22.1
+Recommends: puppet-agent >= 6
 Recommends: genisoimage
 Recommends: rpm
 Recommends: yum
 Recommends: yum-utils
 %else
-Requires: puppet-agent >= 6.22.1
+Requires: puppet-agent >= 6
 Requires: genisoimage
 Requires: rpm
 Requires: yum
@@ -113,6 +113,13 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Fri Oct 22 2021 Liz Nemsick <lnemsick.simp@gmail.com> - 6.7.1-1
+- Fixed a bug in unpack_dvd error handling that prevented the correct
+  error message from being emitted, when unpack_dvd detected the old
+  SIMP yum layout.
+- Adjusted the puppet-agent requirement to >= 6.
+- Updated kickstart files in the share directory.
+
 * Wed Sep 29 2021 Trevor Vaughan <tvaughan@onyxpoint.com> - 6.7.0-1
 - Fixed dependencies for EL8 systems
 - Updated unpack_dvd to handle the new SIMP ISO layout and not break the

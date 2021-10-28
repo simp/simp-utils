@@ -43,7 +43,7 @@ end
 
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.7.1
+Version: 6.7.2
 Release: %{lua: print(package_release)}%{?dist}
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -113,6 +113,15 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Thu Oct 28 2021 Liz Nemsick <lnemsick.simp@gmail.com> - 6.7.2-1
+-  EL8 client kickstart config fixes:
+   - Removed krb5-workstation and subversion from the list of required packages
+   - Added the following lines to enable modular repos required by the kickstart
+     module --name=python36 --stream-3.6
+     module --name=perl --stream=5.26
+     module --name=perl-IO-Socket-SSL --stream=2.066
+     module --name=perl-libwww-perl --stream=6.34
+
 * Fri Oct 22 2021 Liz Nemsick <lnemsick.simp@gmail.com> - 6.7.1-1
 - Fixed a bug in unpack_dvd error handling that prevented the correct
   error message from being emitted, when unpack_dvd detected the old

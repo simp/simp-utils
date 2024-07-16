@@ -43,7 +43,7 @@ end
 
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.7.2
+Version: 6.8.0
 Release: %{lua: print(package_release)}%{?dist}
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -113,6 +113,13 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Tue Jul 16 2024 Steven Pritchard <steve@sicura.us> - 6.8.0-1
+- Updates for Puppet 8
+    - Various fixes for Ruby 3 compatibility
+    - Fix use of legacy facts
+    - Use Ruby 2.7 (Puppet 7) for GHA tests by default
+    - Add Ruby 3.2/Puppet 8 to GHA test matrix
+
 * Thu Oct 28 2021 Liz Nemsick <lnemsick.simp@gmail.com> - 6.7.2-1
 -  EL8 client kickstart config fixes:
    - Removed krb5-workstation and subversion from the list of required packages

@@ -9,7 +9,7 @@ require 'spec_helper_acceptance'
 #
 # @fails if the specified repo file cannot be installed on host
 def copy_repo(host, repo_filename, repo_name = 'simp_manual.repo')
-  if File.exists?(repo_filename)
+  if File.exist?(repo_filename)
     puts('='*72)
     puts("Using repos defined in #{repo_filename}")
     puts('='*72)
@@ -135,7 +135,7 @@ test_name 'updaterepos unit test'
 describe 'updaterepos unit test' do
 
   hosts.each do |host|
-    os_major = fact_on(host, 'operatingsystemmajrelease')
+    os_major = fact_on(host, 'os.release.major')
     if os_major == '8'
       puts 'SKIPPING test because SIMP repositories for EL8 are not set up: SIMP-9143'
       next

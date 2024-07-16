@@ -88,7 +88,7 @@ describe 'gen-ldap-update unit test' do
 
     context 'when no ldap configuration is present' do
       let(:host_base_dn) {
-        fact_on(host, 'domain').split('.').map{ |d| "dc=#{d}" }.join(',')
+        fact_on(host, 'networking.domain').split('.').map{ |d| "dc=#{d}" }.join(',')
       }
 
       it 'should remove old ldap.conf files' do
@@ -104,7 +104,7 @@ describe 'gen-ldap-update unit test' do
       # FIXME This is hack that wouldn't be necessary if gen-ldap-update used
       # the domain fact?
       it 'should fix hostname' do
-        fqdn = fact_on(host,'fqdn').strip
+        fqdn = fact_on(host,'networking.fqdn').strip
         hostname = on(host, 'hostname').stdout.strip
         if fqdn != hostname
           on(host, "hostname #{fqdn}")

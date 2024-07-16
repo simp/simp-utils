@@ -274,7 +274,7 @@ class PuppetLast
           begin
             require 'puppet'
 
-            transaction_report = YAML.load_file(latest_report)
+            transaction_report = YAML.safe_load(File.read(latest_report), permitted_classes: [Puppet::Transaction::Report])
 
             unless (hosts.empty? || hosts.include?(transaction_report.host))
               @logger.debug("Skipping #{transaction_report.host} since it is not in the host list")

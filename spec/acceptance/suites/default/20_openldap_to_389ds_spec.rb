@@ -2,7 +2,7 @@ require 'spec_helper_acceptance'
 describe 'OpenLDAP to 389DS convert and import scripts' do
 
   ldap_server = only_host_with_role(hosts, 'ldap_server')
-  ldap_server_fqdn = fact_on(ldap_server, 'fqdn')
+  ldap_server_fqdn = fact_on(ldap_server, 'networking.fqdn')
 
   let(:files_dir) { File.join(File.dirname(__FILE__), 'files', 'openldap_to_389ds') }
   let(:scripts_src) { 'share/transition_scripts/openldap_to_389ds' }
@@ -135,8 +135,8 @@ describe 'OpenLDAP to 389DS convert and import scripts' do
       'simp_options::trusted_nets'               => ['any'],
       'simp_options::pki'                        => true,
       'simp_options::pki::source'                => '/etc/pki/simp-testing/pki',
-      'pki::private_key_source'                  => '/etc/pki/simp-testing/pki/private/%{facts.fqdn}.pem',
-      'pki::public_key_source'                   => '/etc/pki/simp-testing/pki/public/%{facts.fqdn}.pub',
+      'pki::private_key_source'                  => '/etc/pki/simp-testing/pki/private/%{facts.networking.fqdn}.pem',
+      'pki::public_key_source'                   => '/etc/pki/simp-testing/pki/public/%{facts.networking.fqdn}.pub',
       'pki::cacerts_sources'                     => [ '/etc/pki/simp-testing/pki/cacerts'],
       'simp_options::ldap'                       => true,
       'simp_options::ldap::uri'                  => [ "ldaps://#{ldap_server_fqdn}" ],

@@ -33,6 +33,7 @@ describe 'unpack_dvd script' do
     'mkisofs',
     'isoinfo',
     'rpmbuild',
+    'createrepo',
   ]
   require 'facter'
   missing_apps = required_apps.select{|x| !Facter::Core::Execution.which(x)}

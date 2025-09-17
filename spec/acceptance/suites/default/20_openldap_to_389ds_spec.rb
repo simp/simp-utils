@@ -130,22 +130,22 @@ describe 'OpenLDAP to 389DS convert and import scripts' do
     let(:ds_root_name) { 'accounts' }
     let(:hieradata) do
       {
-        'simp_options::firewall' => false,
-      'simp_options::trusted_nets'               => ['any'],
-      'simp_options::pki'                        => true,
-      'simp_options::pki::source'                => '/etc/pki/simp-testing/pki',
-      'pki::private_key_source'                  => '/etc/pki/simp-testing/pki/private/%{facts.networking.fqdn}.pem',
-      'pki::public_key_source'                   => '/etc/pki/simp-testing/pki/public/%{facts.networking.fqdn}.pub',
-      'pki::cacerts_sources'                     => [ '/etc/pki/simp-testing/pki/cacerts'],
-      'simp_options::ldap'                       => true,
-      'simp_options::ldap::uri'                  => [ "ldaps://#{ldap_server_fqdn}" ],
-      'simp_options::ldap::base_dn'              =>  base_dn,
-      'simp_options::ldap::bind_dn'              =>  "cn=hostAuth,ou=Hosts,#{base_dn}",
-      'simp_options::ldap::bind_pw'              => 'foobarbaz',
-      'simp_options::ldap::bind_hash'            => '{SSHA}BNPDR0qqE6HyLTSlg13T0e/+yZnSgYQz',
-      'simp_options::ldap::master'               =>  "ldaps://#{ldap_server_fqdn}",
-      'simp_options::ldap::root_dn'              => "cn=LDAPAdmin,ou=People,#{base_dn}",
-      'simp_ds389::instances::accounts::root_pw' => 'suP3rP@ssw0r!',
+        'simp_options::firewall'                   => false,
+        'simp_options::trusted_nets'               => ['any'],
+        'simp_options::pki'                        => true,
+        'simp_options::pki::source'                => '/etc/pki/simp-testing/pki',
+        'pki::private_key_source'                  => '/etc/pki/simp-testing/pki/private/%{facts.networking.fqdn}.pem',
+        'pki::public_key_source'                   => '/etc/pki/simp-testing/pki/public/%{facts.networking.fqdn}.pub',
+        'pki::cacerts_sources'                     => [ '/etc/pki/simp-testing/pki/cacerts'],
+        'simp_options::ldap'                       => true,
+        'simp_options::ldap::uri'                  => [ "ldaps://#{ldap_server_fqdn}" ],
+        'simp_options::ldap::base_dn'              => base_dn,
+        'simp_options::ldap::bind_dn'              => "cn=hostAuth,ou=Hosts,#{base_dn}",
+        'simp_options::ldap::bind_pw'              => 'foobarbaz',
+        'simp_options::ldap::bind_hash'            => '{SSHA}BNPDR0qqE6HyLTSlg13T0e/+yZnSgYQz',
+        'simp_options::ldap::master'               => "ldaps://#{ldap_server_fqdn}",
+        'simp_options::ldap::root_dn'              => "cn=LDAPAdmin,ou=People,#{base_dn}",
+        'simp_ds389::instances::accounts::root_pw' => 'suP3rP@ssw0r!',
       }
     end
 

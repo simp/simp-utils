@@ -13,7 +13,7 @@ end
 
 group :test do
   gem 'rake'
-  gem 'puppet', ENV.fetch('PUPPET_VERSION', '~> 8')
+  gem 'puppet', ENV.fetch('PUPPET_VERSION', ['>= 7', '< 9'])
   gem 'rspec'
   gem 'simplecov'
   gem 'mocha'

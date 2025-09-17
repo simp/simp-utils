@@ -158,7 +158,7 @@ describe 'PuppetLast' do
             client9.test.net checked in 1466.38 minutes ago
             filehost.test.net checked in 60.01 minutes ago
             puppet.test.net checked in 60.00 minutes ago
-            EOF
+          EOF
           expect { pl.main([]) }.to output(expected).to_stdout
           expect(pl.main([])).to eq(0)
         end
@@ -174,7 +174,7 @@ describe 'PuppetLast' do
             client9.test.net checked in 1.02 days ago
             filehost.test.net checked in 0.04 days ago
             puppet.test.net checked in 0.04 days ago
-            EOF
+          EOF
           expect { pl.main(['-t', 'days']) }.to output(out).to_stdout
           expect(pl.main(['-t', 'days'])).to eq(0)
         end
@@ -190,7 +190,7 @@ describe 'PuppetLast' do
             client9.test.net  checked in 1466.38 minutes ago
             filehost.test.net checked in   60.01 minutes ago
             puppet.test.net   checked in   60.00 minutes ago
-            EOF
+          EOF
           expect { pl.main(['-p']) }.to output(out).to_stdout
           expect(pl.main(['-p'])).to eq(0)
         end
@@ -205,7 +205,7 @@ describe 'PuppetLast' do
             client9.test.net from environment test checked in 1466.38 minutes ago with status failed
             filehost.test.net from environment production checked in 60.01 minutes ago with status changed
             puppet.test.net from environment production checked in 60.00 minutes ago with status changed
-            EOF
+          EOF
 
           expect { pl.main(['-d']) }.to output(out).to_stdout
           expect(pl.main(['-d'])).to eq(0)
@@ -222,7 +222,7 @@ describe 'PuppetLast' do
             client9.test.net checked in 1466.38 minutes ago
             filehost.test.net checked in 60.01 minutes ago
             puppet.test.net checked in 60.00 minutes ago
-            EOF
+          EOF
           expect { pl.main(['-s', 'certname']) }.to output(expected).to_stdout
           expect(pl.main(['-s', 'certname'])).to eq(0)
         end
@@ -238,7 +238,7 @@ describe 'PuppetLast' do
             client9.test.net  checked in 1466.38 minutes ago
             client3.test.net  has no reported check in
             filehost.test.net checked in   60.01 minutes ago
-            EOF
+          EOF
           expect { pl.main(['-p', '-s', 'nil']) }.to output(expected).to_stdout
           expect(pl.main(['-p', '-s', 'nil'])).to eq(0)
         end
@@ -254,7 +254,7 @@ describe 'PuppetLast' do
             client7.test.net  from environment production checked in 1586.38 minutes ago with status N/A#{'    '}
             client6.test.net  from environment production checked in 4286.38 minutes ago with status N/A#{'    '}
             client3.test.net  from environment test       has no reported check in
-            EOF
+          EOF
           expect { pl.main(['-p', '-d', '-s', 'time']) }.to output(expected).to_stdout
           expect(pl.main(['-p', '-d', '-s', 'time'])).to eq(0)
         end
@@ -269,7 +269,7 @@ describe 'PuppetLast' do
             puppet.test.net from environment production checked in 60.00 minutes ago with status changed
             client9.test.net from environment test checked in 1466.38 minutes ago with status failed
             client7.test.net from environment production checked in 1586.38 minutes ago with status N/A
-            EOF
+          EOF
           args = [ '-d', '-s', 'status', '--hosts',
                    'puppet.test.net,client7.test.net,client9.test.net' ]
 
@@ -329,7 +329,7 @@ describe 'PuppetLast' do
             client9.test.net time issue: 41853.62 minutes in the future
             filehost.test.net time issue: 43259.99 minutes in the future
             puppet.test.net time issue: 43260.00 minutes in the future
-            EOF
+          EOF
           expect { pl.main([]) }.to output(expected).to_stdout
           expect(pl.main([])).to eq(0)
         end
@@ -342,7 +342,7 @@ describe 'PuppetLast' do
             client7.test.net checked in 1586.38 minutes ago
             filehost.test.net checked in 60.01 minutes ago
             puppet.test.net checked in 60.00 minutes ago
-            EOF
+          EOF
           expect { pl.main(['-E', 'production']) }.to output(expected).to_stdout
           expect(pl.main(['-E', 'production'])).to eq(0)
         end
@@ -357,7 +357,7 @@ describe 'PuppetLast' do
             client9.test.net checked in 1466.38 minutes ago
             filehost.test.net checked in 60.01 minutes ago
             puppet.test.net checked in 60.00 minutes ago
-            EOF
+          EOF
           expect { pl.main(['-E', 'production,test']) }.to output(expected).to_stdout
           expect(pl.main(['-E', 'production,test'])).to eq(0)
         end
@@ -369,7 +369,7 @@ describe 'PuppetLast' do
             client8.test.net checked in 1526.38 minutes ago
             filehost.test.net checked in 60.01 minutes ago
             puppet.test.net checked in 60.00 minutes ago
-            EOF
+          EOF
           expect { pl.main(['-S', 'changed']) }.to output(expected).to_stdout
           expect(pl.main(['-S', 'changed'])).to eq(0)
         end

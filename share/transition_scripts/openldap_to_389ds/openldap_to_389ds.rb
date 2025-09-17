@@ -104,7 +104,7 @@ optparse = OptionParser.new do |opts|
   opts.banner = "Usage: #{$PROGRAM_NAME} -i INFILE -o OUTFILE [-b BASEDN]"
   # in case we are using system Ruby on EL7 (2.0.0), don't use
   # <<~
-  opts.separator <<-HELP_MSG.gsub(%r{^    }, '')
+  opts.separator <<~HELP_MSG
       See the README.md for detailed instructions.
 
     OPTIONS:
@@ -136,7 +136,7 @@ optparse = OptionParser.new do |opts|
     exit
   end
 
-  opts.separator <<-HELP_MSG.gsub(%r{^    }, '')
+  opts.separator <<~HELP_MSG
 
     EXAMPLES:
       # To use the default locations for input and output files

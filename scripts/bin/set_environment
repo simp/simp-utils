@@ -82,6 +82,8 @@
 #
 require 'yaml'
 
+module Simp; end
+
 # Simp::YamlNodeClassifier class
 class Simp::YamlNodeClassifier
   DEFAULT_CONFIG_FILE = '/etc/puppetlabs/puppet/environments.yaml'.freeze

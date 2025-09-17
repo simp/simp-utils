@@ -33,7 +33,7 @@ jobs:
           bundler-cache: true
       - run: |
           bundle show
-          bundle exec rake rubocop
+          bundle exec rubocop
   releng-checks:
     name: 'RELENG checks'
     runs-on: ubuntu-latest

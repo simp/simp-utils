@@ -8,15 +8,12 @@ require 'spec_helper_acceptance'
 # +repo_filename+: Path of the repo file to be installed
 #
 # @fails if the specified repo file cannot be installed on host
-def copy_repo(host, repo_filename, repo_name = 'simp_manual.repo')
-  if File.exist?(repo_filename)
-    puts('='*72)
-    puts("Using repos defined in #{repo_filename}")
-    puts('='*72)
-    scp_to(hosts, repo_filename, "/etc/yum.repos.d/#{repo_name}")
-  else
-    fail("File #{repo_filename} could not be found")
-  end
+def copy_repo(_host, repo_filename, repo_name = 'simp_manual.repo')
+  raise("File #{repo_filename} could not be found") unless File.exist?(repo_filename)
+  puts('=' * 72)
+  puts("Using repos defined in #{repo_filename}")
+  puts('=' * 72)
+  scp_to(hosts, repo_filename, "/etc/yum.repos.d/#{repo_name}")
 end
 
 # Set up SIMP repos on the host
@@ -33,7 +30,7 @@ end
 #                      simp-community-postgresql)
 #
 # @fails if the specified repos cannot be installed on host
-def set_up_simp_repos(host, set_up_simp_main = true, set_up_simp_deps = true )
+def set_up_simp_repos(host, set_up_simp_main = true, set_up_simp_deps = true)
   reponame = ENV['BEAKER_repo']
   if reponame && (reponame[0] == '/')
     copy_repo(host, reponame)
@@ -58,82 +55,80 @@ def repo_dir(repo)
 end
 
 def set_up_local_repo(host, repo_name)
-   repo_spec = <<EOM
-[#{repo_name}-local-x86_64]
-name=#{repo_name} local repo
-baseurl=file://#{repo_dir(repo_name)}/x86_64
-enabled=1
-gpgcheck=0
-EOM
-   repo_file = File.join('/', 'etc','yum.repos.d', "#{repo_name}_local.repo")
-   create_remote_file(host, repo_file, repo_spec)
+  repo_spec = <<~EOM
+    [#{repo_name}-local-x86_64]
+    name=#{repo_name} local repo
+    baseurl=file://#{repo_dir(repo_name)}/x86_64
+    enabled=1
+    gpgcheck=0
+  EOM
+  repo_file = File.join('/', 'etc', 'yum.repos.d', "#{repo_name}_local.repo")
+  create_remote_file(host, repo_file, repo_spec)
 end
 
 shared_examples_for 'a YUM repo updater' do |host, repo, command|
   context "#{repo_dir(repo)} does not exist" do
     it "updaterepos should fail to update the #{repo} YUM repo" do
-      on(host, command, :acceptable_exit_codes => [1])
+      on(host, command, acceptable_exit_codes: [1])
     end
   end
 
   context "#{repo_dir(repo)} does exist" do
-    it 'should set up local repositories' do
+    it 'sets up local repositories' do
       set_up_local_repo(host, repo)
     end
 
-    it "should set up #{repo_dir(repo)}" do
+    it "sets up #{repo_dir(repo)}" do
       on(host, "mkdir -p #{repo_dir(repo)}/noarch #{repo_dir(repo)}/x86_64")
       on(host, "cp /root/staging/noarch/* #{repo_dir(repo)}/noarch")
       on(host, "cp /root/staging/x86_64/* #{repo_dir(repo)}/x86_64")
     end
 
     it "updaterepos should update the #{repo} YUM repo" do
-      on(host, command, :pty => true )
+      on(host, command, pty: true)
       on(host, 'yum makecache')
       (noarch_rpms + x86_64_rpms).each do |pkg|
         result = on(host, "yum provides -C #{pkg}")
-        expect(result.stdout).to match(/^Repo\s*:\s*#{repo}\-local\-x86_64/)
+        expect(result.stdout).to match(%r{^Repo\s*:\s*#{repo}\-local\-x86_64})
       end
     end
 
     it 'updaterepos should provide links of noarch RPMs' do
       noarch_rpms.each do |pkg|
         info = on(host, "ls -al #{repo_dir(repo)}/x86_64/#{pkg}*.rpm").stdout.strip
-        expect(info).to match(/lrwxrwxrwx.*\s+\->\s+\.\.\/noarch\/#{Regexp.escape(pkg)}/)
+        expect(info).to match(%r{lrwxrwxrwx.*\s+\->\s+\.\./noarch/#{Regexp.escape(pkg)}})
       end
     end
 
     it 'updaterepos should allow apache group access to repodata' do
       info = on(host, "ls -ld #{repo_dir(repo)}/x86_64/repodata").stdout.strip
-      expect(info).to match(/^drwxr\-[xs].*root\s+apache/)
+      expect(info).to match(%r{^drwxr\-[xs].*root\s+apache})
       info = on(host, "ls -l #{repo_dir(repo)}/x86_64/repodata/").stdout.strip
       info.split("\n").each do |file_info|
-        next if file_info.match(/^total/)
-        expect(file_info).to match(/^.rw.r\-..*root\s+apache/)
+        next if file_info.match?(%r{^total})
+        expect(file_info).to match(%r{^.rw.r\-..*root\s+apache})
       end
     end
 
     it 'updaterepos should allow apache group access to directories and files' do
       info = on(host, "ls -ld #{repo_dir(repo)}/x86_64").stdout.strip
-      expect(info).to match(/^drwxr\-[xs].*root\s+apache/)
+      expect(info).to match(%r{^drwxr\-[xs].*root\s+apache})
       info = on(host, "ls -l #{repo_dir(repo)}/x86_64/").stdout.strip
       info.split("\n").each do |file_info|
-        next if file_info.match(/^total/)
-        expect(file_info).to match(/^.rw.r..*root\s+apache/)
+        next if file_info.match?(%r{^total})
+        expect(file_info).to match(%r{^.rw.r..*root\s+apache})
       end
     end
 
     it 'updaterepos should be safely re-run' do
-      on(host, command, :pty => true )
+      on(host, command, pty: true)
     end
   end
 end
 
-
 test_name 'updaterepos unit test'
 
 describe 'updaterepos unit test' do
-
   hosts.each do |host|
     os_major = fact_on(host, 'os.release.major')
     if os_major == '8'
@@ -141,24 +136,28 @@ describe 'updaterepos unit test' do
       next
     end
 
-    let(:noarch_rpms) { [
-      'pupmod-puppetlabs-stdlib',
-      'pupmod-simp-simplib',
-      'simp-adapter'
-    ] }
+    let(:noarch_rpms) do
+      [
+        'pupmod-puppetlabs-stdlib',
+        'pupmod-simp-simplib',
+        'simp-adapter',
+      ]
+    end
 
-    let(:x86_64_rpms) { [
-      'sudosh2',
-      'chkrootkit'
-    ] }
+    let(:x86_64_rpms) do
+      [
+        'sudosh2',
+        'chkrootkit',
+      ]
+    end
 
     context "setup on #{host}" do
-      it 'should set up common test files' do
+      it 'sets up common test files' do
         scp_to(host, 'scripts/sbin/updaterepos', '/root/updaterepos')
         on(host, 'chmod +x /root/updaterepos')
       end
 
-      it 'should set up remote repositories' do
+      it 'sets up remote repositories' do
         enable_epel_on(host)
         set_up_simp_repos(host)
         host.install_package('createrepo')
@@ -167,7 +166,7 @@ describe 'updaterepos unit test' do
         on(host, 'yum makecache')
       end
 
-      it 'should download but not install packages' do
+      it 'downloads but not install packages' do
         on(host, 'mkdir -p /root/staging/noarch')
         noarch_rpms.each do |pkg|
           on(host, "cd /root/staging/noarch; yumdownloader #{pkg}")
@@ -178,11 +177,9 @@ describe 'updaterepos unit test' do
           on(host, "cd /root/staging/x86_64; yumdownloader #{pkg}")
         end
       end
-
     end
 
     context "updaterepos operation on #{host}" do
-
       context 'with no arguments' do
         it_behaves_like('a YUM repo updater', host, 'SIMP', '/root/updaterepos')
       end

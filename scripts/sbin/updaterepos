@@ -74,7 +74,7 @@ Dir.chdir(tgt_dir) do
       puts
 
       File.umask(0o022)
-      `/usr/bin/createrepo -p --update .`
+      `/usr/bin/createrepo_c -p --update .`
       result = $CHILD_STATUS
       File.umask(0o027)
 
@@ -82,7 +82,7 @@ Dir.chdir(tgt_dir) do
       FileUtils.chmod_R('g+srX', Dir.pwd)
 
       if result != 0
-        $stderr.puts("Warning: There was an error running createrepo on #{tgt_dir}/#{dir}")
+        $stderr.puts("Warning: There was an error running createrepo_c on #{tgt_dir}/#{dir}")
       end
     end
   end

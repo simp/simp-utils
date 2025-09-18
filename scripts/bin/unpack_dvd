@@ -158,7 +158,7 @@ def update_yum_repo(repo, group)
     # this, it simply sits there and looks like it has hung.
     buffer = ''
     first = true
-    IO.popen('createrepo -p --update .').each_byte do |b|
+    IO.popen('createrepo_c -p --update .').each_byte do |b|
       b = b.chr
       if (b == "\r") || (b == "\n")
         next if %r{^\s*$}.match?(buffer)

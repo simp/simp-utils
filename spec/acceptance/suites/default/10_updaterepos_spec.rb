@@ -160,7 +160,7 @@ describe 'updaterepos unit test' do
       it 'sets up remote repositories' do
         enable_epel_on(host)
         set_up_simp_repos(host)
-        host.install_package('createrepo')
+        host.install_package('createrepo_c')
         host.install_package('yum-utils')
         host.install_package('httpd')
         on(host, 'yum makecache')

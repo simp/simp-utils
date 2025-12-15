@@ -73,19 +73,24 @@ describe 'unpack_dvd script' do
         break
       end
 
-      it "builds a mock ISO to test #{target_name}" do
-        Dir.chdir(target) do
-          `#{mkisofs} -o #{iso_path} .`
-          expect($CHILD_STATUS.exitstatus).to eq 0
-        end
-      end
-
       context 'when running unpack_dvd' do
         before(:each) do
+          # Build the mock ISO for testing
+          Dir.chdir(target) do
+            `#{mkisofs} -o #{iso_path} .`
+            raise "Failed to build mock ISO for #{target_name}" unless $CHILD_STATUS.exitstatus == 0
+          end
+
+          # Run the unpack_dvd command
           Dir.chdir(target) do
             `#{cmd}`
           end
         end
+
+        after(:each) do
+          File.delete(iso_path) if File.exist?(iso_path)
+        end
+
         let!(:exit_status) do
           $CHILD_STATUS.exitstatus
         end

@@ -1,17 +1,15 @@
 #!/opt/puppetlabs/puppet/bin/ruby
-#
+
 # puppetlast queries PuppetDB and local file reports and returns a list of
 # nodes and the last time the catalog was compiled
-
 class PuppetLast
-
-  def setup_logger(log_level='info', force=false)
-    return if (@logger && !force)
+  def setup_logger(log_level = 'info', force = false)
+    return if @logger && !force
 
     require 'logger'
 
     @logger = Logger.new($stdout)
-    @logger.level = eval("Logger::#{log_level.upcase}")
+    @logger.level = Object.const_get("Logger::#{log_level.upcase}")
     @logger.formatter = proc do |severity, _datetime, _progname, msg|
       "#{severity}: #{msg}\n"
     end
@@ -38,115 +36,115 @@ class PuppetLast
     opts = OptionParser.new do |opts|
       opts.banner = "Usage: #{File.basename(__FILE__)} [options]"
 
-      opts.separator ""
+      opts.separator ''
 
       opts.summary_width = 26
       opts.summary_indent = '  '
 
       opts.on(
-        "-d",
-        "--detailed",
-        "Show environment and last run status information"
+        '-d',
+        '--detailed',
+        'Show environment and last run status information',
       ) do |detailed|
         @options.detailed = detailed
       end
 
       opts.on(
-        "-e",
-        "--expiration NUM",
+        '-e',
+        '--expiration NUM',
         Float,
-         "Don't show systems that have not checked in for more than NUM days."
+         "Don't show systems that have not checked in for more than NUM days.",
       ) do |exp|
-        if exp == 0
-          @options.expiration = 99999
-        else
-          @options.expiration = exp.to_f.abs
-        end
+        @options.expiration = if exp == 0
+                                99_999
+                              else
+                                exp.to_f.abs
+                              end
       end
 
       opts.on(
-        "-S",
-        "--status a,b,c",
+        '-S',
+        '--status a,b,c',
         ['failed', 'changed', 'unchanged'],
-        "Return only nodes with statuses: 'failed', 'changed', or 'unchanged'"
+        "Return only nodes with statuses: 'failed', 'changed', or 'unchanged'",
       ) do |statuses|
         @options.statuses = statuses
       end
 
       opts.on(
-        "-H",
-        "--hosts a,b,c",
+        '-H',
+        '--hosts a,b,c',
         Array,
-        "List of hosts (short or long) that you wish to get data on"
+        'List of hosts (short or long) that you wish to get data on',
       ) do |hosts|
         @options.hosts = hosts
       end
 
       opts.on(
-        "-E",
-        "--environments a,b,c",
+        '-E',
+        '--environments a,b,c',
         Array,
-        "List of environments you want to get data from"
+        'List of environments you want to get data from',
       ) do |environments|
         @options.environments = environments
       end
 
       opts.on(
-        "-s",
-        "--sort-by SORT_OPTION",
+        '-s',
+        '--sort-by SORT_OPTION',
         [:nil, :certname, :time, :status, :environments],
-        "Sort by a given attribute: 'nil' => unsorted, 'certname' => default, 'time' => last checkin, 'status' => last run status, 'environments' => node environment"
+        "Sort by a given attribute: 'nil' => unsorted, 'certname' => default, 'time' => last checkin, 'status' => last run status, 'environments' => node environment",
       ) do |sort_by|
         @options.sort_by = sort_by
       end
 
       opts.on(
-        "-t",
-        "--timeformat TF",
+        '-t',
+        '--timeformat TF',
         [:seconds, :minutes, :hours, :days],
-        "Select output time format (seconds, minutes, hours, days)"
+        'Select output time format (seconds, minutes, hours, days)',
       ) do |tf|
         @options.outtime = tf
       end
 
       opts.on(
-        "-p",
-        "--pretty",
-        "Format the output more attractively."
+        '-p',
+        '--pretty',
+        'Format the output more attractively.',
       ) do |pretty|
         @options.pretty = pretty
       end
 
       opts.on(
-        "-P",
-        "--port",
+        '-P',
+        '--port',
         Array,
-        "The port that PuppetDB is listening on"
+        'The port that PuppetDB is listening on',
       ) do |port|
         @options.port = port
       end
 
       opts.on(
-        "-f",
-        "--files-only",
-        "Only use the local files, not PuppetDB",
-      ) do |port|
+        '-f',
+        '--files-only',
+        'Only use the local files, not PuppetDB',
+      ) do |_port|
         @options.files_only = true
       end
 
       opts.on(
-        "-l",
-        "--log-level level",
+        '-l',
+        '--log-level level',
         ['fatal', 'error', 'warn', 'info', 'debug'],
-        "Set the log level (fatal, error, warn, info, debug)"
+        'Set the log level (fatal, error, warn, info, debug)',
       ) do |log_level|
         setup_logger(log_level, true)
       end
 
       opts.on(
-        "-h",
-        "--help",
-        "Help Message"
+        '-h',
+        '--help',
+        'Help Message',
       ) do
         puts opts
         @options.help_requested = true
@@ -156,25 +154,25 @@ class PuppetLast
     begin
       opts.parse!(args)
     rescue OptionParser::ParseError => e
-      raise "#{e.message}\n#{opts.to_s}"
+      raise "#{e.message}\n#{opts}"
     end
 
     case @options.outtime.to_s
-      when /^s.*/
-        @options.outtime = 'seconds'
-        @options.divisor = 1
-      when /^h.*/
-        @options.outtime = 'hours'
-        @options.divisor = 1/Float(3600)
-      when /^d.*/
-        @options.outtime = 'days'
-        @options.divisor = 1/Float(86400)
-      else
-        @options.outtime = 'minutes'
-        @options.divisor = 1/Float(60)
+    when %r{^s.*}
+      @options.outtime = 'seconds'
+      @options.divisor = 1
+    when %r{^h.*}
+      @options.outtime = 'hours'
+      @options.divisor = 1 / Float(3600)
+    when %r{^d.*}
+      @options.outtime = 'days'
+      @options.divisor = 1 / Float(86_400)
+    else
+      @options.outtime = 'minutes'
+      @options.divisor = 1 / Float(60)
     end
 
-    @options.expsecs = @options.expiration * 86400
+    @options.expsecs = @options.expiration * 86_400
   end
 
   # grabs info about a particular host from PuppetDB
@@ -183,22 +181,22 @@ class PuppetLast
     require 'uri'
     require 'net/http'
 
-    # TODO move to ssl
+    # TODO: move to ssl
     uri = URI("http://localhost:#{port}/pdb/query/v4/nodes/#{certname}")
 
     @logger.debug("Running PDB query: #{uri}")
 
     begin
-      data = JSON.parse(Net::HTTP.get(uri), :symbolize_names => true)
-    rescue Exception => e
-      err_msg = "#{e}\n" +
-                "  Please make sure PuppetDB is running, this script is being run from\n" +
-                "  the PuppetDB host, and the port is correct"
+      data = JSON.parse(Net::HTTP.get(uri), symbolize_names: true)
+    rescue StandardError => e
+      err_msg = "#{e}\n" \
+                "  Please make sure PuppetDB is running, this script is being run from\n" \
+                '  the PuppetDB host, and the port is correct'
       @logger.error err_msg
     end
 
     if data.keys.include? :error
-      err_msg = "Could not retrieve node data for #{certname}" +
+      err_msg = "Could not retrieve node data for #{certname}" \
                 "  Server Said: #{data}"
       @logger.error err_msg
     end
@@ -214,17 +212,17 @@ class PuppetLast
     require 'uri'
     require 'net/http'
 
-    # TODO move to ssl
+    # TODO: move to ssl
     uri = URI("http://localhost:#{port}/pdb/query/v4/nodes")
 
     @logger.debug("Running PDB query: #{uri}")
 
     begin
-      data = JSON.parse(Net::HTTP.get(uri), :symbolize_names => true)
-    rescue Exception => e
-      err_msg = "#{e}\n" +
-                "  Please make sure PuppetDB is running, this script is being run from\n" +
-                "  the PuppetDB host, and the port is correct"
+      data = JSON.parse(Net::HTTP.get(uri), symbolize_names: true)
+    rescue StandardError => e
+      err_msg = "#{e}\n" \
+                "  Please make sure PuppetDB is running, this script is being run from\n" \
+                '  the PuppetDB host, and the port is correct'
       @logger.error err_msg
     end
 
@@ -238,28 +236,26 @@ class PuppetLast
   def query_files_hosts(hostlist, hosts)
     report_dir = get_report_dir
 
-    existing_nodes = hostlist.map{|x| x[:certname]}
+    existing_nodes = hostlist.map { |x| x[:certname] }
 
     local_host_template = {
-      :deactivated=>false,
-      :latest_report_hash=>nil,
-      :facts_environment=>nil,
-      :cached_catalog_status=>"not_used",
-      :report_environment=>nil,
-      :latest_report_corrective_change=>nil,
-      :catalog_environment=>nil,
-      :facts_timestamp=>nil,
-      :latest_report_noop=>nil,
-      :expired=>false,
-      :latest_report_noop_pending=>nil,
-      :report_timestamp=>nil,
-      :certname=>nil,
-      :catalog_timestamp=>nil,
-      :latest_report_job_id=>nil,
-      :latest_report_status=>nil
+      deactivated: false,
+      latest_report_hash: nil,
+      facts_environment: nil,
+      cached_catalog_status: 'not_used',
+      report_environment: nil,
+      latest_report_corrective_change: nil,
+      catalog_environment: nil,
+      facts_timestamp: nil,
+      latest_report_noop: nil,
+      expired: false,
+      latest_report_noop_pending: nil,
+      report_timestamp: nil,
+      certname: nil,
+      catalog_timestamp: nil,
+      latest_report_job_id: nil,
+      latest_report_status: nil,
     }.freeze
-
-    local_host_reports = []
 
     if File.directory?(report_dir)
       @logger.debug("Processing Report Directory: #{report_dir}")
@@ -276,7 +272,7 @@ class PuppetLast
 
             transaction_report = YAML.safe_load(File.read(latest_report), permitted_classes: [Puppet::Transaction::Report])
 
-            unless (hosts.empty? || hosts.include?(transaction_report.host))
+            unless hosts.empty? || hosts.include?(transaction_report.host)
               @logger.debug("Skipping #{transaction_report.host} since it is not in the host list")
               next
             end
@@ -331,64 +327,64 @@ class PuppetLast
         host[:expired] = nil
       else
         last_checkin = Time.now - Time.parse(host[:report_timestamp])
-        formatted_checkin = sprintf("%#{@options.round_to}f",(last_checkin * @options.divisor).abs)
+        formatted_checkin = "%#{@options.round_to}f" % (last_checkin * @options.divisor).abs
       end
       node_data << {
-        :last_checkin => last_checkin,
-        :expired      => host[:expired].nil? ? false : host[:expired],
-        :certname     => host[:certname],
-        :environment  => host[:report_environment].nil? ? 'N/A' : host[:report_environment],
-        :status       => host[:latest_report_status].nil? ? 'N/A' : host[:latest_report_status],
-        :formatted_checkin => formatted_checkin
+        last_checkin: last_checkin,
+        expired: host[:expired].nil? ? false : host[:expired],
+        certname: host[:certname],
+        environment: host[:report_environment].nil? ? 'N/A' : host[:report_environment],
+        status: host[:latest_report_status].nil? ? 'N/A' : host[:latest_report_status],
+        formatted_checkin: formatted_checkin,
       }
     end
 
     unless @options.environments.empty?
-      node_data.delete_if {|node| not @options.environments.include? node[:environment] }
+      node_data.delete_if { |node| !@options.environments.include? node[:environment] }
     end
     unless @options.statuses.empty?
-      node_data.delete_if {|node| not @options.statuses.include? node[:status] }
+      node_data.delete_if { |node| !@options.statuses.include? node[:status] }
     end
 
     node_data
   end
 
   # sort hosts list according to the option
-  def sort_hosts(hosts,sort_by)
+  def sort_hosts(hosts, sort_by)
     case sort_by
     when :certname
-      return hosts.sort{ |a,b| a[:certname] <=> b[:certname] }
+      hosts.sort_by { |a| a[:certname] }
     when :time
-      return hosts.sort{ |a,b| 
-        if a[:last_checkin].nil? and !b[:last_checkin].nil?
+      hosts.sort do |a, b|
+        if a[:last_checkin].nil? && !b[:last_checkin].nil?
           1
-        elsif !a[:last_checkin].nil? and b[:last_checkin].nil?
+        elsif !a[:last_checkin].nil? && b[:last_checkin].nil?
           -1
         else
           a[:last_checkin] <=> b[:last_checkin]
         end
-      }
+      end
     when :status
-      return hosts.sort{ |a,b| a[:status].downcase <=> b[:status].downcase }
+      hosts.sort { |a, b| a[:status].downcase <=> b[:status].downcase }
     when :environment
-      return hosts.sort{ |a,b| a[:environment] <=> b[:environment] }
+      hosts.sort_by { |a| a[:environment] }
     else
-      return hosts
+      hosts
     end
   end
 
   # find max length of element and return it
   def find_longest(sorted_data, key)
     keys = sorted_data.map { |h| h[key].to_s }
-    return keys.max_by(&:length).length
+    keys.max_by(&:length).length
   end
 
   def print_node_without_checkin(node, col_len)
     if @options.detailed
       printf(
-        "%-#{col_len[:certname]}s from environment %-#{col_len[:environment]}s has no reported check in\n", 
+        "%-#{col_len[:certname]}s from environment %-#{col_len[:environment]}s has no reported check in\n",
         node[:certname],
-        node[:environment]
+        node[:environment],
       )
     else
       printf("%-#{col_len[:certname]}s has no reported check in\n", node[:certname])
@@ -398,32 +394,30 @@ class PuppetLast
   def print_node_with_checkin(node, col_len)
     if node[:last_checkin] < 0
       msg = "%-#{col_len[:certname]}s time issue: %#{col_len[:formatted_checkin]}#{@options.round_to}f %s in the future\n"
-    else node[:last_checkin] < @options.expsecs
-      if @options.detailed
-        msg = "%-#{col_len[:certname]}s from environment %-#{col_len[:environment]}s checked in %#{col_len[:formatted_checkin]}#{@options.round_to}f %s ago with status %-#{col_len[:status]}s\n"
-      else
-        msg = "%-#{col_len[:certname]}s checked in %#{col_len[:formatted_checkin]}#{@options.round_to}f %s ago\n"
-      end
+    else
+      node[:last_checkin]
+      @options.expsecs
+      msg = if @options.detailed
+              "%-#{col_len[:certname]}s from environment %-#{col_len[:environment]}s checked in %#{col_len[:formatted_checkin]}#{@options.round_to}f %s ago with status %-#{col_len[:status]}s\n"
+            else
+              "%-#{col_len[:certname]}s checked in %#{col_len[:formatted_checkin]}#{@options.round_to}f %s ago\n"
+            end
     end
 
-    if node[:last_checkin].to_s =~ /e/
+    if node[:last_checkin].to_s.include?('e')
       @logger.warn "#{node[:certname]} outside the bounds of time and space"
-    else
-      if @options.detailed
-        printf(msg,
+    elsif @options.detailed
+      printf(msg,
           node[:certname],
           node[:environment],
           node[:formatted_checkin],
           @options.outtime,
-          node[:status]
-        )
-      else
-        printf(msg,
-          node[:certname],
-          node[:formatted_checkin],
-          @options.outtime
-        )
-      end
+          node[:status])
+    else
+      printf(msg,
+        node[:certname],
+        node[:formatted_checkin],
+        @options.outtime)
     end
   end
 
@@ -437,22 +431,22 @@ class PuppetLast
 
     unless @options.files_only
       if @options.hosts.empty?
-        hostlist = query_pdb_hosts( @options.port ) || []
+        hostlist = query_pdb_hosts(@options.port) || []
       else
         @options.hosts.each do |host|
-          hostlist << query_pdb_host( host, @options.port )
+          hostlist << query_pdb_host(host, @options.port)
         end
       end
     end
 
     query_files_hosts(hostlist, @options.hosts)
 
-    node_data = transform_hosts( hostlist )
-    return 1 if node_data.size == 0
+    node_data = transform_hosts(hostlist)
+    return 1 if node_data.empty?
 
-    sorted_data = sort_hosts( node_data,@options.sort_by )
+    sorted_data = sort_hosts(node_data, @options.sort_by)
 
-    col_len = { :certname=>0, :formatted_checkin=>0, :environment=>0, :status=>0 }
+    col_len = { certname: 0, formatted_checkin: 0, environment: 0, status: 0 }
     if @options.pretty
       col_len.keys.each do |col|
         col_len[col] = find_longest(sorted_data, col)
@@ -465,40 +459,38 @@ class PuppetLast
       # but users can specify nodes manually
       if node[:expired]
         @logger.info "#{node[:certname]} expired"
+      elsif node[:last_checkin].nil?
+        print_node_without_checkin(node, col_len)
       else
-        if node[:last_checkin].nil?
-          print_node_without_checkin(node, col_len)
-        else
-          print_node_with_checkin(node, col_len)
-        end
+        print_node_with_checkin(node, col_len)
       end
     end
-    return 0
-  rescue SignalException =>e
+    0
+  rescue SignalException => e
     if e.inspect == 'Interrupt'
       @logger.fatal "\nProcessing interrupted! Exiting."
     else
       @logger.fatal "\nProcess received signal #{e.message}. Exiting!"
-      e.backtrace.first(10).each{|l| @logger.fatal l }
+      e.backtrace.first(10).each { |l| @logger.fatal l }
     end
-    return 1
-  rescue RuntimeError =>e
+    1
+  rescue RuntimeError => e
     @logger.error(e.message)
-    return 1
+    1
   rescue => e
     @logger.error("\n#{e.message}")
-    e.backtrace.first(10).each{|l| @logger.error l }
-    return 1
+    e.backtrace.first(10).each { |l| @logger.error l }
+    1
   end
 
   private
 
   def get_report_dir
-    %x{puppet config print reportdir}.strip
+    `puppet config print reportdir`.strip
   end
 end
 
-if __FILE__ == $0
+if __FILE__ == $PROGRAM_NAME
   pl = PuppetLast.new
   exit pl.main(ARGV)
 end

@@ -1,0 +1,20 @@
+{
+  "name": "Puppet Development",
+  "dockerFile": "Dockerfile",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "puppet.puppet-vscode",
+        "shopify.ruby-lsp"
+      ],
+      "settings": {
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "bash"
+          }
+        }
+      }
+    }
+  },
+  "containerUser": "vscode"
+}

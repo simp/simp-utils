@@ -11,7 +11,7 @@ group :test do
   gem 'mocha'
   # renovate: datasource=rubygems versioning=ruby
   gem 'simp-rake-helpers', ENV.fetch('SIMP_RAKE_HELPERS_VERSION', '~> 5.24.0')
-  gem 'pathspec', '~> 0.2' if Gem::Requirement.create('< 2.6').satisfied_by?(Gem::Version.new(RUBY_VERSION.dup))
+  gem 'pathspec', '~> 2.0' if Gem::Requirement.create('< 2.6').satisfied_by?(Gem::Version.new(RUBY_VERSION.dup))
 
 
   gem 'pry'

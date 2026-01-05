@@ -18,7 +18,7 @@ describe 'gen-ldap-update unit test' do
 
   hosts.each do |host|
     context 'set up' do
-      it 'should set up common test files' do
+      it 'sets up common test files' do
         scp_to(host, 'scripts/sbin/gen-ldap-update', '/root/gen-ldap-update')
         on(host, 'chmod +x /root/gen-ldap-update')
 
@@ -28,101 +28,100 @@ describe 'gen-ldap-update unit test' do
     end
 
     context 'when /etc/openldap/ldap.conf is present' do
-      it 'should remove old ldap.conf files and install test /etc/openldap/ldap.conf' do
+      it 'removes old ldap.conf files and install test /etc/openldap/ldap.conf' do
         on(host, 'rm -f /etc/ldap.conf /etc/openldap/ldap.conf')
         scp_to(host, File.join(files_dir, 'etc_openldap_ldap.conf'), '/etc/openldap/ldap.conf')
       end
 
-      it 'should generate ldap modify instructions for configured domain' do
+      it 'generates ldap modify instructions for configured domain' do
         results = on(host, '/root/gen-ldap-update')
         expect(results.stdout).to eq modify_ldif
       end
     end
 
     context 'when /etc/ldap.conf is present' do
-      it 'should remove old ldap.conf files and install test /etc/ldap.conf' do
+      it 'removes old ldap.conf files and install test /etc/ldap.conf' do
         on(host, 'rm -f /etc/ldap.conf /etc/openldap/ldap.conf')
         scp_to(host, File.join(files_dir, 'etc_ldap.conf'), '/etc/ldap.conf')
       end
 
-      it 'should generate ldap modify instructions for configured domain' do
+      it 'generates ldap modify instructions for configured domain' do
         results = on(host, '/root/gen-ldap-update')
         expect(results.stdout).to eq modify_ldif
       end
     end
 
     context 'when host domain does not match default.ldif domain' do
-      it 'should remove old ldap.conf files and install /etc/openldap/ldap.conf with different domain' do
+      it 'removes old ldap.conf files and install /etc/openldap/ldap.conf with different domain' do
         on(host, 'rm -f /etc/ldap.conf /etc/openldap/ldap.conf')
         scp_to(host, File.join(files_dir, 'etc_openldap_ldap_other_domain.conf'), '/etc/openldap/ldap.conf')
       end
 
-      it 'should fail to generate ldap modify instructions' do
-        on(host, '/root/gen-ldap-update', :acceptable_exit_codes => [1])
+      it 'fails to generate ldap modify instructions' do
+        on(host, '/root/gen-ldap-update', acceptable_exit_codes: [1])
       end
     end
 
     context 'when DNs of interest do not exist in default.ldif' do
-      it 'should restore test /etc/openldap/ldap.conf' do
+      it 'restores test /etc/openldap/ldap.conf' do
         scp_to(host, File.join(files_dir, 'etc_openldap_ldap.conf'), '/etc/openldap/ldap.conf')
       end
 
-      it 'should install test /etc/openldap/default.ldif missing DNs of interest' do
+      it 'installs test /etc/openldap/default.ldif missing DNs of interest' do
         scp_to(host, File.join(files_dir, 'incomplete_default.ldif'), '/etc/openldap/default.ldif')
       end
 
-      it 'should fail to generate ldap modify instructions' do
-        on(host, '/root/gen-ldap-update', :acceptable_exit_codes => [1])
+      it 'fails to generate ldap modify instructions' do
+        on(host, '/root/gen-ldap-update', acceptable_exit_codes: [1])
       end
     end
 
     context 'when /etc/openldap/default.ldif is absent' do
-      it 'should remove default.ldif on hosts' do
+      it 'removes default.ldif on hosts' do
         on(host, 'rm /etc/openldap/default.ldif')
       end
 
-      it 'should fail to generate ldap modify instructions' do
-        on(host, '/root/gen-ldap-update', :acceptable_exit_codes => [1])
+      it 'fails to generate ldap modify instructions' do
+        on(host, '/root/gen-ldap-update', acceptable_exit_codes: [1])
       end
     end
 
     context 'when no ldap configuration is present' do
-      let(:host_base_dn) {
-        fact_on(host, 'networking.domain').split('.').map{ |d| "dc=#{d}" }.join(',')
-      }
+      let(:host_base_dn) do
+        fact_on(host, 'networking.domain').split('.').map { |d| "dc=#{d}" }.join(',')
+      end
 
-      it 'should remove old ldap.conf files' do
+      it 'removes old ldap.conf files' do
         on(host, 'rm -f /etc/ldap.conf /etc/openldap/ldap.conf')
       end
 
-      it 'should install default.ldif with base_dn using host domain' do
+      it 'installs default.ldif with base_dn using host domain' do
         default_ldif_txt = File.read(File.join(files_dir, 'default.ldif'))
         default_ldif_txt.gsub!('dc=example,dc=com', host_base_dn)
         create_remote_file(host, '/etc/openldap/default.ldif', default_ldif_txt)
       end
 
-      # FIXME This is hack that wouldn't be necessary if gen-ldap-update used
+      # FIXME: This is hack that wouldn't be necessary if gen-ldap-update used
       # the domain fact?
-      it 'should fix hostname' do
-        fqdn = fact_on(host,'networking.fqdn').strip
+      it 'fixes hostname' do
+        fqdn = fact_on(host, 'networking.fqdn').strip
         hostname = on(host, 'hostname').stdout.strip
         if fqdn != hostname
           on(host, "hostname #{fqdn}")
         end
       end
 
-      it 'should generate ldap modify instructions for host domain' do
+      it 'generates ldap modify instructions for host domain' do
         results = on(host, '/root/gen-ldap-update')
         expected = modify_ldif.gsub('dc=example,dc=com', host_base_dn)
         expect(results.stdout).to eq expected
       end
-
     end
 
     context 'restore for next test' do
-       it 'should remove mock system directories/files created for tests' do
+      it 'removes mock system directories/files created for tests' do
         on(host, 'rm -rf /etc/ldap.conf /etc/openldap')
-       end
+      end
     end
   end
 end

@@ -21,26 +21,25 @@ on:
 
 jobs:
   ruby-style:
-    if: false # TODO Modules will need: rubocop in Gemfile, .rubocop.yml
-    name: 'Ruby Style (experimental)'
+    name: 'Ruby Style'
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
       - uses: actions/checkout@v6
-      - name: "Install Ruby ${{matrix.puppet.ruby_version}}"
+      - name: "Install Ruby 2.7"
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: 2.7.8
           bundler-cache: true
       - run: |
           bundle show
-          bundle exec rake rubocop
+          bundle exec rubocop
   releng-checks:
     name: 'RELENG checks'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: 'Install Ruby ${{matrix.puppet.ruby_version}}'
+      - name: 'Install Ruby 2.7'
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: 2.7.8
@@ -76,7 +75,7 @@ jobs:
       # unit test uses mkisofs and rpmbuild
       - run: 'command -v mkisofs || if command -v apt-get; then sudo apt-get update; sudo apt-get install -y genisoimage; fi ||:'
       - run: 'command -v rpmbuild || if command -v apt-get; then sudo apt-get update; sudo apt-get install -y rpm-build; fi ||:'
-      - run: 'command -v createrepo || if command -v apt-get; then sudo apt-get update; sudo apt-get install -y createrepo; fi ||:'
+      - run: 'command -v createrepo_c || if command -v apt-get; then sudo apt-get update; sudo apt-get install -y createrepo-c; fi ||:'
       - run: 'bundle exec rake spec'
 
 #  dump_contexts:

@@ -4,7 +4,7 @@
 # to the values found in /etc/openldap/default.ldif.  This output should
 # be saved to a file or piped to ldapmodify directly.
 
-default_ldif = "/etc/openldap/default.ldif"
+default_ldif = '/etc/openldap/default.ldif'
 
 unless File.readable?(default_ldif)
   $stderr.puts("Error: Could not read #{default_ldif}. Unable to proceed.")
@@ -16,26 +16,31 @@ end
 
 # Try /etc/openldap/ldap.conf first.
 base_dn = nil
-if File.readable?("/etc/openldap/ldap.conf")
-  File.open("/etc/openldap/ldap.conf",'r').each do |ln|
-    if ln =~ /^\s*BASE\s+(.*)$/
-      base_dn = $1.strip
+if File.readable?('/etc/openldap/ldap.conf')
+  File.open('/etc/openldap/ldap.conf', 'r').each do |ln|
+    if ln =~ %r{^\s*BASE\s+(.*)$}
+      base_dn = Regexp.last_match(1).strip
     end
   end
-elsif File.readable?("/etc/ldap.conf")
-  File.open("/etc/ldap.conf").each do |ln|
-    if ln =~ /^\s*base\s+(.*)$/
-      base_dn = $1.strip
+elsif File.readable?('/etc/ldap.conf')
+  File.open('/etc/ldap.conf').each do |ln|
+    if ln =~ %r{^\s*base\s+(.*)$}
+      base_dn = Regexp.last_match(1).strip
     end
   end
 else
   require 'socket'
 
   begin
-    #TODO use facter to get domain
-    base_dn = Socket.gethostbyname(Socket.gethostname).first.split('.')[1..-1].map { |x| x = "dc=#{x}" }.join(',')
+    # TODO: use facter to get domain
+    base_dn = Addrinfo.getaddrinfo(Socket.gethostname, nil, :INET, :STREAM, nil, Socket::AI_CANONNAME)
+                      .first
+                      .canonname
+                      .split('.')[1..-1]
+                      .map { |x| "dc=#{x}" }
+                      .join(',')
     raise if base_dn.empty?
-  rescue Exception => e
+  rescue StandardError
     $stderr.puts('Error: Could not determine base_dn from hostname.')
     exit(1)
   end
@@ -44,25 +49,25 @@ end
 # DN's we want to update.
 update_dn = [
   "cn=default,ou=pwpolicies,#{base_dn}",
-  "cn=noExpire_noLockout,ou=pwpolicies,#{base_dn}"
+  "cn=noExpire_noLockout,ou=pwpolicies,#{base_dn}",
 ]
 
-new_entries = Hash.new
+new_entries = {}
 
 current_dn = nil
-File.open(default_ldif,'r').each do |ln|
-  if ln =~ /^\s*$/
+File.open(default_ldif, 'r').each do |ln|
+  if %r{^\s*$}.match?(ln)
     current_dn = nil
   end
 
   if current_dn.nil?
     update_dn.each do |dn|
-      if ln =~ /^dn:\s+#{dn}/
+      if %r{^dn:\s+#{dn}}.match?(ln)
         current_dn = "dn: #{dn}"
-        new_entries[current_dn] = Array.new
+        new_entries[current_dn] = []
       end
     end
-  elsif ln !~ /^objectClass/
+  elsif !%r{^objectClass}.match?(ln)
     new_entries[current_dn].push(ln.strip)
   end
 end
@@ -78,12 +83,12 @@ puts "# You probably want to pipe the output of this script into something like 
 keys = new_entries.keys.sort
 keys.each do |key|
   puts key
-  puts "changetype: modify"
-  new_entries[key].map! { |x|
+  puts 'changetype: modify'
+  new_entries[key].map! do |x|
     lhs = x.split(' ').first.chop
     rhs = x.split(' ')[1..-1].join(' ')
-    x = "replace: #{lhs}\n#{lhs}: #{rhs}"
-  }
+    "replace: #{lhs}\n#{lhs}: #{rhs}"
+  end
 
   puts new_entries[key].join("\n-\n")
   puts

@@ -81,50 +81,49 @@
 #
 #
 require 'yaml'
-module Simp
-  class YamlNodeClassifier
-    DEFAULT_CONFIG_FILE = '/etc/puppetlabs/puppet/environments.yaml'
-    DEFAULT_ENVIRONMENT = 'production'
-    
-    def run(args, config_file = DEFAULT_CONFIG_FILE, default_env = DEFAULT_ENVIRONMENT)
-      fqdn = args[0]
-      
-      raise("You must pass the FQDN of the host as the first argument") unless fqdn
-      
-      # Set result to the default environment if there is no match
-      result = { 'environment' => default_env }
-      
-      if File.readable?(config_file)
-        environment_data = YAML.load(File.read(config_file)).to_hash
-      
-        environment_data.each_pair do |host,value|
-          if host[0].chr == '/'
-            if host[-1].chr == '/'
-      
-              clean_host = host[1..-2]
-      
-              if Regexp.new(clean_host).match(fqdn)
-                result['environment'] = value.to_s.strip
-                break
-              end
-            else
-              fail("Rule '#{host}' is not a valid hostname or regex")
-            end
-          else
-            if host == fqdn
-              result['environment'] = value.to_s.strip
-              break
-            end
+
+# Simp module namespace
+module Simp; end
+
+# Simp::YamlNodeClassifier class
+class Simp::YamlNodeClassifier
+  DEFAULT_CONFIG_FILE = '/etc/puppetlabs/puppet/environments.yaml'.freeze
+  DEFAULT_ENVIRONMENT = 'production'.freeze
+
+  def run(args, config_file = DEFAULT_CONFIG_FILE, default_env = DEFAULT_ENVIRONMENT)
+    fqdn = args[0]
+
+    raise('You must pass the FQDN of the host as the first argument') unless fqdn
+
+    # Set result to the default environment if there is no match
+    result = { 'environment' => default_env }
+
+    if File.readable?(config_file)
+      environment_data = YAML.load_file(config_file).to_hash
+
+      environment_data.each_pair do |host, value|
+        if host[0].chr == '/'
+          raise("Rule '#{host}' is not a valid hostname or regex") unless host[-1].chr == '/'
+
+          clean_host = host[1..-2]
+
+          if Regexp.new(clean_host).match(fqdn)
+            result['environment'] = value.to_s.strip
+            break
           end
+
+        elsif host == fqdn
+          result['environment'] = value.to_s.strip
+          break
         end
       end
-      
-      puts result.to_yaml
-      return 0
     end
+
+    puts result.to_yaml
+    0
   end
 end
 
-if __FILE__ == $0
+if __FILE__ == $PROGRAM_NAME
   exit Simp::YamlNodeClassifier.new.run(ARGV)
 end

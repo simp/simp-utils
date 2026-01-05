@@ -26,14 +26,14 @@ require 'optparse'
 # - memberuid is copied into to member before deletion
 # - sshpublickey is copied into nssshpublickey before deletion
 
-DELETE_KEYS = %i[
-  entrycsn
-  entryuuid
-  memberuid
-  pwdaccountlockedtime
-  pwdchangedtime
-  pwdfailuretime
-  sshpublickey
+DELETE_KEYS = [
+  :entrycsn,
+  :entryuuid,
+  :memberuid,
+  :pwdaccountlockedtime,
+  :pwdchangedtime,
+  :pwdfailuretime,
+  :sshpublickey,
 ].freeze
 
 def convert_group(attrs, userdn)
@@ -43,7 +43,7 @@ def convert_group(attrs, userdn)
 
     newattrs[a].delete_if { |x| x.nil? || x.strip.empty? }
 
-    newattrs[a] += %w[groupOfNames nsMemberOf posixGroup] if a == :objectclass
+    newattrs[a] += ['groupOfNames', 'nsMemberOf', 'posixGroup'] if a == :objectclass
 
     newattrs[a].uniq!
   end
@@ -56,8 +56,8 @@ end
 
 def convert_user(attrs)
   newattrs = {}
-  lastname = ""
-  firstname = ""
+  lastname = ''
+  firstname = ''
   attrs.each do |a, v|
     newattrs[a] = v.dup
 
@@ -78,7 +78,6 @@ def convert_user(attrs)
     if a == :givenname
       firstname = newattrs[a].first
     end
-
 
     if a == :sshpublickey
       newattrs[a] = ['<no ssh key>'] if newattrs[a].empty?
@@ -105,7 +104,7 @@ optparse = OptionParser.new do |opts|
   opts.banner = "Usage: #{$PROGRAM_NAME} -i INFILE -o OUTFILE [-b BASEDN]"
   # in case we are using system Ruby on EL7 (2.0.0), don't use
   # <<~
-  opts.separator <<-HELP_MSG.gsub(/^    /,'')
+  opts.separator <<~HELP_MSG
       See the README.md for detailed instructions.
 
     OPTIONS:
@@ -115,23 +114,20 @@ optparse = OptionParser.new do |opts|
   opts.on('-b', '--basedn BASEDN',
     'Base DN of the LDAP server.  When absent,',
     'will attempt to determine it from the input',
-    'file.'
-  ) do |b|
+    'file.') do |b|
     basedn = b.strip
   end
 
   opts.on('-i', '--input INFILE',
     'Input LDIF file containing the slapcat dump',
     'of the OpenLDAP server.',
-    'Default: ./simp_openldap.ldif'
-  ) do |f|
+    'Default: ./simp_openldap.ldif') do |f|
     input_ldif = f.strip
   end
 
   opts.on('-o', '--output OUTFILE',
     'Generated LDIF file for import into 389-DS.',
-    'Default: ./simp_389ds.ldif'
-  ) do |f|
+    'Default: ./simp_389ds.ldif') do |f|
     output_ldif = f.strip
   end
 
@@ -140,7 +136,7 @@ optparse = OptionParser.new do |opts|
     exit
   end
 
-  opts.separator <<-HELP_MSG.gsub(/^    /,'')
+  opts.separator <<~HELP_MSG
 
     EXAMPLES:
       # To use the default locations for input and output files
@@ -163,7 +159,7 @@ end
 fh = File.open(input_ldif, 'r')
 begin
   ldifs = Net::LDAP::Dataset.read_ldif(fh)
-rescue Exception => e
+rescue StandardError => e
   warn "ERROR: Malformed LDIF input:\n#{e}\n#{e.backtrace.join("\n")}"
   exit 1
 ensure
@@ -208,7 +204,7 @@ begin
   File.open(output_ldif, 'w') do |ofh|
     ofh.puts(ldifs389.to_ldif.join("\n"))
   end
-rescue Exception => e
+rescue StandardError => e
   warn "ERROR: Output file could not be created:\n#{e}\n#{e.backtrace.join("\n")}"
   exit 1
 end

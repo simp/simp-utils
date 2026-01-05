@@ -53,29 +53,28 @@ require 'shellwords'
 require 'find'
 require 'yaml'
 
-File.umask(0022)
+File.umask(0o022)
 
 # This class shamelessly borrowed from
 # http://www.software-testing.com.au/blog/2010/01/13/text-based-progress-bar-in-ruby-for-command-line-programs/
 class ProgressBar
-
   attr_accessor :items_to_do, :items_done
 
-  def initialize(items_to_do, items_done=0)
+  def initialize(items_to_do, items_done = 0)
     reset(items_to_do, items_done)
   end
 
   def percent_complete
-    return (@items_complete*1.0/@items_to_do*1.0)*100
+    (@items_complete * 1.0 / @items_to_do * 1.0) * 100
   end
 
-  def advance(steps_to_advance=1)
-    @items_complete+=steps_to_advance
+  def advance(steps_to_advance = 1)
+    @items_complete += steps_to_advance
   end
 
-  def reset(items_to_do, items_done=0)
-    @items_to_do=items_to_do
-    @items_complete=items_done
+  def reset(items_to_do, items_done = 0)
+    @items_to_do = items_to_do
+    @items_complete = items_done
   end
 
   def report
@@ -87,14 +86,14 @@ class ProgressBar
   end
 
   def progress_bar
-    complete_bar=(percent_complete/2.0).floor
-    incomplete_bar=((100-percent_complete)/2.0).ceil
-    return "[#{"*"*complete_bar}#{"-"*incomplete_bar}]"
+    complete_bar = (percent_complete / 2.0).floor
+    incomplete_bar = ((100 - percent_complete) / 2.0).ceil
+    "[#{'*' * complete_bar}#{'-' * incomplete_bar}]"
   end
 end
 
 def bnr
-  ('='*4) + ' '
+  ('=' * 4) + ' '
 end
 
 # Extract the .treeinfo file from the disc and parse out the relevant values.
@@ -103,22 +102,21 @@ end
 def parse_treeinfo_into_discattrs(text)
   discattrs = {}
   text.each_line do |line|
-    if line =~ /^family = (.*)$/
-        fam = $1.chomp
-        if fam.chomp =~ /CentOS/
-          discattrs[:family] = "CentOS"
-        elsif fam.chomp =~ /Red Hat|RHEL|RedHat/
-          discattrs[:family] = "RedHat"
-        end
-    elsif line =~ /^version = (.*)$/
-      discattrs[:version] = $1.chomp
-    elsif line =~ /^arch = (.*)$/
-      discattrs[:arch] = $1.chomp
+    if line =~ %r{^family = (.*)$}
+      fam = Regexp.last_match(1).chomp
+      if fam.chomp.include?('CentOS')
+        discattrs[:family] = 'CentOS'
+      elsif %r{Red Hat|RHEL|RedHat}.match?(fam.chomp)
+        discattrs[:family] = 'RedHat'
+      end
+    elsif line =~ %r{^version = (.*)$}
+      discattrs[:version] = Regexp.last_match(1).chomp
+    elsif line =~ %r{^arch = (.*)$}
+      discattrs[:arch] = Regexp.last_match(1).chomp
     end
   end
   discattrs
 end
-
 
 def update_yum_repo(repo, group)
   repo_dirs = [ repo ]
@@ -132,11 +130,11 @@ def update_yum_repo(repo, group)
     end
 
     # Add RPM-only directories
-    rpm_only_dirs = Dir.glob(File.join('..', '**', '*.rpm')).map{|x| File.split(x).first}.uniq
-    rpm_only_dirs.delete_if{|x| discovered_repos.find{|y| x =~ %r{^#{Regexp.escape(y)}}}}
+    rpm_only_dirs = Dir.glob(File.join('..', '**', '*.rpm')).map { |x| File.split(x).first }.uniq
+    rpm_only_dirs.delete_if { |x| discovered_repos.find { |y| x =~ %r{^#{Regexp.escape(y)}} } }
     discovered_repos += rpm_only_dirs
 
-    discovered_repos.delete_if{|x| File.basename(x) == File.basename(repo)}
+    discovered_repos.delete_if { |x| File.basename(x) == File.basename(repo) }
 
     discovered_modular_repos = Dir.glob(File.join('..', '**', 'repodata', '*module*'))
     discovered_modular_repos.map! do |x|
@@ -160,13 +158,13 @@ def update_yum_repo(repo, group)
     # this, it simply sits there and looks like it has hung.
     buffer = ''
     first = true
-    IO.popen("createrepo -p --update .").each_byte do |b|
+    IO.popen('createrepo_c -p --update .').each_byte do |b|
       b = b.chr
-      if b == "\r" or b == "\n"
-        next if buffer =~ /^\s*$/
+      if (b == "\r") || (b == "\n")
+        next if %r{^\s*$}.match?(buffer)
 
-        if buffer =~ /(\d+)\/(\d+).*\.rpm/
-          print "\r#{((($1.to_f/$2.to_f) * 100) * 100).round.to_f / 100}% Complete"
+        if buffer =~ %r{(\d+)/(\d+).*\.rpm}
+          print "\r#{(((Regexp.last_match(1).to_f / Regexp.last_match(2).to_f) * 100) * 100).round.to_f / 100}% Complete"
         else
           if first
             puts ''
@@ -181,68 +179,66 @@ def update_yum_repo(repo, group)
     end
   end
 
-  if Process.uid == 0
-    repo_dirs.each  { |dir|
-      begin
-          FileUtils.chown_R('root',group, dir)
-      rescue Exception => e
-        $stderr.puts("WARNING: Could not change permissions on #{dir} to root:#{group}.")
-        $stderr.puts(e)
-      end
+  return unless Process.uid == 0
+  repo_dirs.each do |dir|
+    begin
+      FileUtils.chown_R('root', group, dir)
+    rescue StandardError => e
+      $stderr.puts("WARNING: Could not change permissions on #{dir} to root:#{group}.")
+      $stderr.puts(e)
+    end
 
-      begin
-        FileUtils.chmod_R('g+rX',dir)
-      rescue Exception => e
-        $stderr.puts("WARNING: Could not change permissions on #{dir} to 'g+rX'.")
-        $stderr.puts(e)
-      end
-      begin
-        FileUtils.chmod('g+s',dir)
-      rescue Exception => e
-        $stderr.puts("WARNING: Could not set group id permission on #{dir} 'g+s'.")
-        $stderr.puts(e)
-      end
-    }
+    begin
+      FileUtils.chmod_R('g+rX', dir)
+    rescue StandardError => e
+      $stderr.puts("WARNING: Could not change permissions on #{dir} to 'g+rX'.")
+      $stderr.puts(e)
+    end
+    begin
+      FileUtils.chmod('g+s', dir)
+    rescue StandardError => e
+      $stderr.puts("WARNING: Could not set group id permission on #{dir} 'g+s'.")
+      $stderr.puts(e)
+    end
   end
 end
 
 def sort_noarch(dir, arch)
-# dir = directory you are searching
-# arch = the architecture of the machine
-#
-#  This module sorts the noarch RPMs into the noarch
-#  directory.
-#
-  noarchdir = File.expand_path("../noarch", dir )
+  # dir = directory you are searching
+  # arch = the architecture of the machine
+  #
+  #  This module sorts the noarch RPMs into the noarch
+  #  directory.
+  #
+  noarchdir = File.expand_path('../noarch', dir)
   FileUtils.mkdir_p(noarchdir, mode: 0o755)
   Dir.chdir(dir) do
     Dir.glob('*.rpm').each do |rpmfile|
       next if File.symlink?(rpmfile)
       rpmarch = rpmfile.split('.')[-2]
       unless [ arch, 'noarch'].include?(rpmarch)
-         rpmarch = `rpm -qp #{rpmfile} --queryformat '%{ARCH}' 2> /dev/null`
+        rpmarch = `rpm -qp #{rpmfile} --queryformat '%{ARCH}' 2> /dev/null`
       end
-      FileUtils.mv(rpmfile, noarchdir, :force => true) if rpmarch.eql? 'noarch'
+      FileUtils.mv(rpmfile, noarchdir, force: true) if rpmarch.eql? 'noarch'
     end
   end
 end
 
 def get_iso_toc(isoinfo)
-  iso_list = %x{#{isoinfo} -Rl}.split("\n")
+  iso_list = `#{isoinfo} -Rl`.split("\n")
 
   iso_toc = []
   current_dir = nil
   iso_list.each do |line|
-    if line =~ /Directory listing of (.*)/
-      current_dir = $1.strip
+    if line =~ %r{Directory listing of (.*)}
+      current_dir = Regexp.last_match(1).strip
       next
     end
 
-    if (line !~ /->/) and (line =~ /^\S{10}\s/)
-      file = line.split.last.strip
-      next if file =~ /^\/?\.+$/
-      iso_toc << "#{current_dir + file}"
-    end
+    next unless !line.include?('->') && (line =~ %r{^\S{10}\s})
+    file = line.split.last.strip
+    next if %r{^/?\.+$}.match?(file)
+    iso_toc << (current_dir + file).to_s
   end
   iso_toc
 end
@@ -269,7 +265,7 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
   puts "Unpacking RPM packages from #{discattrs[:path]}...", ''
 
   # Bail if we're trying to unpack into an old-format directory
-  legacy_repodata = Dir.glob(File.join(options[:dest],'SIMP','*','repodata'))
+  legacy_repodata = Dir.glob(File.join(options[:dest], 'SIMP', '*', 'repodata'))
   unless legacy_repodata.empty?
     # Old SIMP layout will have one directory with repodata (<dest>/SIMP/x86_64).
     puts "ERROR: '#{File.dirname(legacy_repodata.first)}' is in the legacy SIMP repo layout!"
@@ -280,38 +276,38 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
   end
 
   iso_toc         = get_iso_toc(isoinfo)
-  kill_dirs       = iso_toc.map{ |x| File.dirname( x ) }.uniq
-  iso_toc         = iso_toc - kill_dirs
-  distdir         = File.join(
+  kill_dirs       = iso_toc.map { |x| File.dirname(x) }.uniq
+  iso_toc -= kill_dirs
+  distdir = File.join(
     options[:dest],
     discattrs[:family],
     versiondir,
     discattrs[:arch],
-    ''
+    '',
   )
-  simpdir         = File.join(
+  simpdir = File.join(
     options[:dest],
     'SIMP',
     discattrs[:family],
     versiondir,
     discattrs[:arch],
-    ''
+    '',
   )
   simp_old_iso = true
 
   progress  = ProgressBar.new(iso_toc.size)
 
   skip_list = [
-    'TRANS.TBL'
+    'TRANS.TBL',
   ]
 
   iso_toc.each do |iso_entry|
     unless skip_list.include?(File.split(iso_entry).last)
       # SIMP 6.6.0 EL8+
       if iso_entry =~ %r{^/SimpRepos/(.+)}
-        target = File.join(simpdir, $1)
+        target = File.join(simpdir, Regexp.last_match(1))
         simp_old_iso = false
-      elsif iso_entry =~ %r{^/SIMP/}
+      elsif %r{^/SIMP/}.match?(iso_entry)
         target = "#{simpdir}#{File.basename(iso_entry)}"
       else
         target = "#{distdir}#{iso_entry}"
@@ -319,7 +315,7 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
 
       begin
         FileUtils.mkdir_p(File.dirname(target))
-      rescue Exception => e
+      rescue StandardError => e
         warn "#{e.class}: #{e.message}"
         puts "This is iso_toc: #{iso_entry}"
         puts "This is the target: #{target}"
@@ -345,13 +341,13 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
 
   if simp_old_iso
     if File.directory?(simpdir)
-      sort_noarch(simpdir,discattrs[:arch] )
-      update_yum_repo(simpdir, options[:group]) unless (simpdir == distdir)
+      sort_noarch(simpdir, discattrs[:arch])
+      update_yum_repo(simpdir, options[:group]) unless simpdir == distdir
     end
   end
 
   update_yum_repo("#{distdir}/Updates", options[:group])
-  puts "Yum repo creation complete"
+  puts 'Yum repo creation complete'
 
   if options[:create_major_os_symlink]
     maj_versiondir = discattrs[:version].split('.').first
@@ -359,7 +355,7 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
     target_basedir = File.join(options[:dest], discattrs[:family])
     create_major_os_version_symlink(target_basedir, versiondir, maj_versiondir)
     # create major link for SIMP repository
-    target_basedir = File.join(options[:dest],'SIMP',discattrs[:family])
+    target_basedir = File.join(options[:dest], 'SIMP', discattrs[:family])
     create_major_os_version_symlink(target_basedir, versiondir, maj_versiondir)
   end
 
@@ -367,21 +363,21 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
 end
 
 def unpack_pxeboot_from_iso(discattrs, versiondir, isoinfo, options)
-  if options[:actions][:unpack_pxeboot].is_a?(String)
-    linux_install_path = options[:actions][:unpack_pxeboot]
-  else
-    linux_install_path = File.expand_path(
-      "#{options[:var_simp]}/environments/#{options[:environment]}" +
-        "/rsync/#{discattrs[:family]}/Global/tftpboot/linux-install"
-    )
-  end
+  linux_install_path = if options[:actions][:unpack_pxeboot].is_a?(String)
+                         options[:actions][:unpack_pxeboot]
+                       else
+                         File.expand_path(
+                           "#{options[:var_simp]}/environments/#{options[:environment]}" \
+                             "/rsync/#{discattrs[:family]}/Global/tftpboot/linux-install",
+                         )
+                       end
 
   if options[:verbose]
     puts "#{bnr}linux_install_path: #{linux_install_path}"
   end
 
   unless File.directory?(linux_install_path)
-    fail("ERROR: pxeboot unpack dest directory not found: '#{linux_install_path}'")
+    raise("ERROR: pxeboot unpack dest directory not found: '#{linux_install_path}'")
   end
 
   iso_toc = get_iso_toc(isoinfo)
@@ -392,29 +388,29 @@ def unpack_pxeboot_from_iso(discattrs, versiondir, isoinfo, options)
 
   iso_pxeboot_images_dir = '/images/pxeboot'
   iso_pxeboot_images = iso_toc.grep(
-    %r[^#{iso_pxeboot_images_dir}]
-  ).reject{|x| x == iso_pxeboot_images_dir}
+    %r{^#{iso_pxeboot_images_dir}},
+  ).reject { |x| x == iso_pxeboot_images_dir }
 
   if options[:verbose]
     puts "#{bnr}iso_toc files under /images/pxeboot (#{iso_pxeboot_images.size}):",
       iso_pxeboot_images.to_yaml, ''
   end
 
-  if iso_pxeboot_images.size > 0
-    puts "Unpacking PXE boot image files..."
+  if !iso_pxeboot_images.empty?
+    puts 'Unpacking PXE boot image files...'
   else
     puts "WARNING: No PXE boot files found on ISO under #{iso_pxeboot_images_dir}"
   end
   iso_pxeboot_images.each do |image|
     image_file = Shellwords.escape(File.basename(image))
-    dest_file = File.join(pxe_dest_dir,image_file)
+    dest_file = File.join(pxe_dest_dir, image_file)
 
     # Just in case there are subdirectories (haven't run across any yet)
-    image_dir = File.dirname(image).sub(%r[^#{iso_pxeboot_images_dir}], '')
+    image_dir = File.dirname(image).sub(%r{^#{iso_pxeboot_images_dir}}, '')
     unless image_dir.empty?
-      newdir = File.expand_path(image_dir,pxe_dest_dir)
+      newdir = File.expand_path(image_dir, pxe_dest_dir)
       FileUtils.mkdir_p(newdir, mode: 0o750, verbose: options[:verbose])
-      dest_file = File.join(newdir,image_file)
+      dest_file = File.join(newdir, image_file)
     end
 
     if options[:verbose]
@@ -426,7 +422,7 @@ def unpack_pxeboot_from_iso(discattrs, versiondir, isoinfo, options)
 
   if Process.uid == 0
     # set ownership + file permissions for tftpboot
-    puts "Setting PXE boot files ownership and SELinux context..."
+    puts 'Setting PXE boot files ownership and SELinux context...'
     FileUtils.chown_R('root', 'nobody', pxe_dest_dir, verbose: options[:verbose])
     system("chcon --reference '#{linux_install_path}' -R '#{pxe_dest_dir}'")
   end
@@ -436,153 +432,150 @@ def unpack_pxeboot_from_iso(discattrs, versiondir, isoinfo, options)
     create_major_os_version_symlink(linux_install_path, pxe_dest_version, maj_versiondir)
   end
 
-  puts "Unpacking PXE boot image files complete."
+  puts 'Unpacking PXE boot image files complete.'
 end
 
-def fail_on_unspecific_versiondir(versiondir, options, discattrs)
-  if versiondir.split('.').size <= 1
-    if options[:version] == versiondir
-       warn <<~MSG
-         WARNING: unspecific versioned directory name ('#{versiondir}'),
-                 (Allowing because it was passed in by option)
+def fail_on_unspecific_versiondir(versiondir, options, _discattrs)
+  return unless versiondir.split('.').size <= 1
+  if options[:version] == versiondir
+    warn <<~MSG
+      WARNING: unspecific versioned directory name ('#{versiondir}'),
+              (Allowing because it was passed in by option)
 
        MSG
-       return
-    end
-
-    puts <<~MSG
-  ERROR:
-
-  The versioned directory name ('#{versiondir}') this script is configured to unpack into
-  is not specific enough to be safe; if used, this ISO\'s data may overwrite/be
-  overwritten by other unpacked ISOs.
-
-  Specific release versions must contain at least one dot (.) character.
-
-  The version '#{versiondir}' may have been automatically determined from the ISO\'s
-  metadata; some OS distributions (CentOS) only provide the major OS release
-  version in their ISOs\' metadata.
-
-  WORKAROUND:
-
-  Run this script again with `-v` and specify a more specific version.  For
-  instance, when unpacking  ISO CentOS-7-x86_64-DVD-2003.iso, you could run:
-
-     unpack_dvd -v 7.0.2003 CentOS-7-x86_64-DVD-2003.iso
-
-  This would use '7.0.2003' as the specific versioned directory name to unpack
-  into, and point the major release directory name '7' to  '7.0.2003'
-  (auto-linking can be disabled with `-n`).
-
-  MSG
-    exit 1
+    return
   end
+
+  puts <<~MSG
+    ERROR:
+
+    The versioned directory name ('#{versiondir}') this script is configured to unpack into
+    is not specific enough to be safe; if used, this ISO\'s data may overwrite/be
+    overwritten by other unpacked ISOs.
+
+    Specific release versions must contain at least one dot (.) character.
+
+    The version '#{versiondir}' may have been automatically determined from the ISO\'s
+    metadata; some OS distributions (CentOS) only provide the major OS release
+    version in their ISOs\' metadata.
+
+    WORKAROUND:
+
+    Run this script again with `-v` and specify a more specific version.  For
+    instance, when unpacking  ISO CentOS-7-x86_64-DVD-2003.iso, you could run:
+
+       unpack_dvd -v 7.0.2003 CentOS-7-x86_64-DVD-2003.iso
+
+    This would use '7.0.2003' as the specific versioned directory name to unpack
+    into, and point the major release directory name '7' to  '7.0.2003'
+    (auto-linking can be disabled with `-n`).
+
+    MSG
+  exit 1
 end
 
 # Set defaults
 options = {
   verbose: false,
-  var_simp: File.directory?('/var/simp') ? '/var/simp' :
-    (File.directory?('/srv/simp') ? '/srv/simp' : nil ),
+  var_simp: if File.directory?('/var/simp')
+              '/var/simp'
+            else
+              (File.directory?('/srv/simp') ? '/srv/simp' : nil)
+            end,
   create_major_os_symlink:  true,
   group: 'apache',
-  dest:  File.directory?('/var/www/yum') ? '/var/www/yum' :
-    (File.directory?('/srv/www/yum') ? '/srv/www/yum' : nil),
+  dest:  if File.directory?('/var/www/yum')
+           '/var/www/yum'
+         else
+           (File.directory?('/srv/www/yum') ? '/srv/www/yum' : nil)
+         end,
   environment: 'production',
   actions: {
     unpack_yum_repo: true,
     unpack_pxeboot:  false,
-  }
+  },
 }
 
 # Get command line options
 opt_parser = OptionParser.new do |opts|
-  opts.banner = "Usage: #{$0} [options] /path/to/dvd/to/unpack"
+  opts.banner = "Usage: #{$PROGRAM_NAME} [options] /path/to/dvd/to/unpack"
 
   opts.separator ''
   opts.separator 'Basic unpack options:'
   opts.separator ''
 
-  opts.on("-v", "--version VERSION",
+  opts.on('-v', '--version VERSION',
     "Override OS version from the ISO's .treeinfo",
-    "  file (which is often just the major OS",
-    "  version, and not specific enough to",
-    "  prevent overwriting directories from",
-    "  previously unpacked ISOs from the same ",
-    "  major OS version."
-    ) do |version|
+    '  file (which is often just the major OS',
+    '  version, and not specific enough to',
+    '  prevent overwriting directories from',
+    '  previously unpacked ISOs from the same ',
+    '  major OS version.') do |version|
     options[:version] = version.chomp
   end
 
   opts.separator 'RPM/yum repo unpack options:'
   opts.separator ''
 
-  opts.on("-Y", "--[no-]unpack-yum",
-    "unpack RPMs from DVD and create yum repo",
-    "  (default: #{options[:actions][:unpack_yum_repo]})",
-  ) do |n|
+  opts.on('-Y', '--[no-]unpack-yum',
+    'unpack RPMs from DVD and create yum repo',
+    "  (default: #{options[:actions][:unpack_yum_repo]})") do |n|
     options[:actions][:unpack_yum_repo] = n
   end
 
-  opts.on("-d", "--dest DIR",
-    "Set the yum repo target directory",
+  opts.on('-d', '--dest DIR',
+    'Set the yum repo target directory',
     "  (Default: #{options[:dest]})",
-    "  The <OS>/<ver>/<arch> directories will be",
-    "  created under here.") do |dest|
+    '  The <OS>/<ver>/<arch> directories will be',
+    '  created under here.') do |dest|
     options[:dest] = dest.chomp
   end
 
-  opts.on("-n", "--[no-]nolink",
-    "Do not symlink the unpacked OS yum repo to",
-    "  serve as the OS's major version repo."
-    ) do |n|
+  opts.on('-n', '--[no-]nolink',
+    'Do not symlink the unpacked OS yum repo to',
+    "  serve as the OS's major version repo.") do |n|
     options[:create_major_os_symlink] = !n
   end
 
-  opts.on("-g", "--group GROUP", String,
-    "Specify group ownership of unpacked packages",
+  opts.on('-g', '--group GROUP', String,
+    'Specify group ownership of unpacked packages',
     "  (Default: '#{options[:group]}')",
-    "  Note: This option does not verify that",
-    "        GROUP actually exists!"
-    ) do |group|
+    '  Note: This option does not verify that',
+    '        GROUP actually exists!') do |group|
     options[:group] = group
   end
 
   opts.separator 'PXE tftpboot unpack options:'
   opts.separator ''
 
-  opts.on("-X", "--[no-]unpack-pxe [DIR]", String,
-    "unpack pxeboot tftpboot files from iso",
+  opts.on('-X', '--[no-]unpack-pxe [DIR]', String,
+    'unpack pxeboot tftpboot files from iso',
     "  (default: #{options[:actions][:unpack_pxeboot]})",
-    "  May optionally specify an alternate",
-    "  target directory for `linux-install/`"
-  ) do |pxeboot|
-    pxeboot = true if (!pxeboot.is_a?(FalseClass) && pxeboot.to_s.empty?)
+    '  May optionally specify an alternate',
+    '  target directory for `linux-install/`') do |pxeboot|
+    pxeboot = true if !pxeboot.is_a?(FalseClass) && pxeboot.to_s.empty?
     if pxeboot.is_a?(String)
       pxeboot.chomp!
-      fail("ERROR: pxeboot directory '#{pxeboot}' does not exist") unless File.directory?(pxeboot)
+      raise("ERROR: pxeboot directory '#{pxeboot}' does not exist") unless File.directory?(pxeboot)
     end
     options[:actions][:unpack_pxeboot] = pxeboot
   end
 
-  opts.on("-e", "--environment ENVIRONMENT", %r[\A[a-z0-9_]+\Z],
-    "Set target SIMP environment (used by -X)",
-    "  (Default: #{options[:environment]}"
-  ) do |env|
+  opts.on('-e', '--environment ENVIRONMENT', %r{\A[a-z0-9_]+\Z},
+    'Set target SIMP environment (used by -X)',
+    "  (Default: #{options[:environment]}") do |env|
     options[:environment] = env.chomp
   end
 
   opts.separator 'Global options:'
   opts.separator ''
 
-  opts.on("-V", "--[no-]verbose",
-    "Add verbose output (default: #{options[:verbose]}"
-  ) do |n|
+  opts.on('-V', '--[no-]verbose',
+    "Add verbose output (default: #{options[:verbose]}") do |n|
     options[:verbose] = n
   end
 
-
-  opts.on("-h", "--help", "Output this useful help message") do
+  opts.on('-h', '--help', 'Output this useful help message') do
     puts opts
     exit
   end
@@ -591,21 +584,21 @@ end
 opt_parser.parse!
 
 # Option checking
-fail("ERROR: You must specify an ISO to unpack") if (ARGV.length < 1)
-fail("ERROR: Could not detect a package destination directory, and no --dest option provided") unless options[:dest]
-fail("ERROR: Destination directory '#{options[:dest]}' does not exist") unless File.directory?(options[:dest])
+raise('ERROR: You must specify an ISO to unpack') if ARGV.empty?
+raise('ERROR: Could not detect a package destination directory, and no --dest option provided') unless options[:dest]
+raise("ERROR: Destination directory '#{options[:dest]}' does not exist") unless File.directory?(options[:dest])
 
 # Set nice names for options
 
 discattrs = {
-  :family => nil,
-  :version => nil,
-  :arch => nil,
-  :path => nil
+  family: nil,
+  version: nil,
+  arch: nil,
+  path: nil,
 }
 
 discattrs[:path] = ARGV.first
-if not File.readable?(discattrs[:path])
+unless File.readable?(discattrs[:path])
   $stderr.puts("ERROR: Could not read file #{discattrs[:path]}")
   exit 1
 end
@@ -620,10 +613,10 @@ if File.blockdev?(discattrs[:path])
   isoinfo = "isoinfo dev=#{discattrs[:path]}"
 end
 
-discattrs.merge!(parse_treeinfo_into_discattrs(%x{#{isoinfo} -R -x /.treeinfo}))
+discattrs.merge!(parse_treeinfo_into_discattrs(`#{isoinfo} -R -x /.treeinfo`))
 
 # If everything isn't filled, die a slow death.
-discattrs.each_pair do |k,v|
+discattrs.each_pair do |k, v|
   if v.nil?
     $stderr.puts("ERROR: Was not able to find the value for #{k} in the DVD .treeinfo file.")
     exit 1
@@ -641,7 +634,7 @@ if options[:verbose]
   puts bnr + "versiondir: #{versiondir}", ''
 end
 
-fail_on_unspecific_versiondir(versiondir,options,discattrs)
+fail_on_unspecific_versiondir(versiondir, options, discattrs)
 
 if options[:actions][:unpack_yum_repo]
   unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)

@@ -29,7 +29,7 @@ jobs:
       - name: "Install Ruby 2.7"
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 2.7.8
+          ruby-version: 4.0.1
           bundler-cache: true
       - run: |
           bundle show
@@ -42,7 +42,7 @@ jobs:
       - name: 'Install Ruby 2.7'
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 2.7.8
+          ruby-version: 4.0.1
           bundler-cache: true
       - run: 'command -v rpm || if command -v apt-get; then sudo apt-get update; sudo apt-get install -y rpm; fi ||:'
       - name: 'Tags and changelogs'

@@ -17,13 +17,13 @@ end
 # Try /etc/openldap/ldap.conf first.
 base_dn = nil
 if File.readable?('/etc/openldap/ldap.conf')
-  File.open('/etc/openldap/ldap.conf', 'r').each do |ln|
+  File.foreach('/etc/openldap/ldap.conf') do |ln|
     if ln =~ %r{^\s*BASE\s+(.*)$}
       base_dn = Regexp.last_match(1).strip
     end
   end
 elsif File.readable?('/etc/ldap.conf')
-  File.open('/etc/ldap.conf').each do |ln|
+  File.foreach('/etc/ldap.conf') do |ln|
     if ln =~ %r{^\s*base\s+(.*)$}
       base_dn = Regexp.last_match(1).strip
     end
@@ -55,7 +55,7 @@ update_dn = [
 new_entries = {}
 
 current_dn = nil
-File.open(default_ldif, 'r').each do |ln|
+File.foreach(default_ldif) do |ln|
   if %r{^\s*$}.match?(ln)
     current_dn = nil
   end

@@ -156,14 +156,11 @@ unless File.exist?(input_ldif)
 end
 
 # Read in the slapcat file
-fh = File.open(input_ldif, 'r')
 begin
-  ldifs = Net::LDAP::Dataset.read_ldif(fh)
+  ldifs = File.open(input_ldif, 'r') { |fh| Net::LDAP::Dataset.read_ldif(fh) }
 rescue StandardError => e
   warn "ERROR: Malformed LDIF input:\n#{e}\n#{e.backtrace.join("\n")}"
   exit 1
-ensure
-  fh.close
 end
 
 basedn ||= ldifs.select { |_k, v| v[:structuralobjectclass].include?('domain') }.keys.first

@@ -45,7 +45,7 @@ describe 'unpack_dvd script' do
 
   Dir.glob(File.join(__dir__, 'files', 'unpack_dvd', 'ISO', '*')).each do |target|
     next unless File.directory?(target)
-    target_name = File.basename(target)
+    target_name = File.basename(target) # rubocop:disable RSpec/LeakyLocalVariable
 
     context "when unpacking an ISO for #{target_name}" do
       let(:working_dir) { File.join(tmpdir, target_name) }

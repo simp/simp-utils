@@ -10,9 +10,9 @@ require 'spec_helper_acceptance'
 # @fails if the specified repo file cannot be installed on host
 def copy_repo(_host, repo_filename, repo_name = 'simp_manual.repo')
   raise("File #{repo_filename} could not be found") unless File.exist?(repo_filename)
-  puts('=' * 72)
-  puts("Using repos defined in #{repo_filename}")
-  puts('=' * 72)
+  puts('=' * 72) # rubocop:disable RSpec/Output
+  puts("Using repos defined in #{repo_filename}") # rubocop:disable RSpec/Output
+  puts('=' * 72) # rubocop:disable RSpec/Output
   scp_to(hosts, repo_filename, "/etc/yum.repos.d/#{repo_name}")
 end
 
@@ -132,7 +132,7 @@ describe 'updaterepos unit test' do
   hosts.each do |host|
     os_major = fact_on(host, 'os.release.major')
     if os_major == '8'
-      puts 'SKIPPING test because SIMP repositories for EL8 are not set up: SIMP-9143'
+      puts 'SKIPPING test because SIMP repositories for EL8 are not set up: SIMP-9143' # rubocop:disable RSpec/Output
       next
     end
 

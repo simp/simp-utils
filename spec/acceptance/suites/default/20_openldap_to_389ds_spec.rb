@@ -1,7 +1,7 @@
 require 'spec_helper_acceptance'
 describe 'OpenLDAP to 389DS convert and import scripts' do
-  ldap_server = only_host_with_role(hosts, 'ldap_server')
-  ldap_server_fqdn = fact_on(ldap_server, 'networking.fqdn')
+  let(:ldap_server) { only_host_with_role(hosts, 'ldap_server') }
+  let(:ldap_server_fqdn) { fact_on(ldap_server, 'networking.fqdn') }
 
   let(:files_dir) { File.join(File.dirname(__FILE__), 'files', 'openldap_to_389ds') }
   let(:scripts_src) { 'share/transition_scripts/openldap_to_389ds' }
@@ -126,7 +126,7 @@ describe 'OpenLDAP to 389DS convert and import scripts' do
     end
   end
 
-  context "Executing importer script on #{ldap_server}" do
+  context 'Executing importer script on ldap_server' do
     let(:ds_root_name) { 'accounts' }
     let(:hieradata) do
       {

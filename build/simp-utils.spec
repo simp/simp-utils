@@ -43,7 +43,7 @@ end
 
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.8.1
+Version: 6.8.2
 Release: %{lua: print(package_release)}%{?dist}
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -113,6 +113,9 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Sun Jun 07 2026 Steven Pritchard <steve@sicura.us> - 6.8.2-1
+- Additional cleanup for rubocop
+
 * Wed Sep 17 2025 Steven Pritchard <steve@sicura.us> - 6.8.1-1
 - Cleanup for rubocop
 

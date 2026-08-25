@@ -43,25 +43,24 @@ end
 
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.8.2
+Version: 6.9.0
 Release: %{lua: print(package_release)}%{?dist}
 License: Apache License, Version 2.0
 Group: Applications/System
 Source: %{name}-%{version}-%{release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-%if 0%{?rhel} > 7
-Recommends: puppet-agent >= 6
+# The scripts in this package run with /opt/puppetlabs/puppet/bin/ruby,
+# which both openvox-agent and puppet-agent provide.
+#
+# dnf will, by default, also remove the packages for these executables when
+# simp-utils is uninstalled, if they are not required by any other packages.
+# So, use weak dependencies known to the package manager.
+# See rpm.org/user_doc/dependencies.html.
+Recommends: (openvox-agent >= 8 or puppet-agent >= 6)
 Recommends: genisoimage
 Recommends: rpm
 Recommends: yum
 Recommends: yum-utils
-%else
-Requires: puppet-agent >= 6
-Requires: genisoimage
-Requires: rpm
-Requires: yum
-Requires: yum-utils
-%endif
 Provides: simp_utils
 Obsoletes: simp_utils
 BuildArch: noarch
@@ -113,6 +112,14 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Tue Aug 25 2026 Steven Pritchard <steve@sicura.us> - 6.9.0-1
+- Support OpenVox
+  - Accept openvox-agent as an alternative to puppet-agent, using RPM
+    boolean dependencies (supported on EL8+)
+  - Drop EL7 support
+- Modernize the test and release tooling (Ruby 3.2-4.0, the openvox gem,
+  simp-rake-helpers 6, simp-beaker-helpers 3, EL8/9/10 nodesets)
+
 * Sun Jun 07 2026 Steven Pritchard <steve@sicura.us> - 6.8.2-1
 - Additional cleanup for rubocop
 

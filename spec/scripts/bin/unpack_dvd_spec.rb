@@ -70,7 +70,10 @@ describe 'unpack_dvd script' do
         it 'runs unpack_dvd' do
           skip("The following executable(s) must be available to build the fixture ISO: '#{missing_apps.join("', ")}'")
         end
-        break
+        # NOTE: `next` (not `break`) is required here: `break` aborts
+        # RSpec's example group setup and leaves the group's `let`
+        # definitions in a broken state on modern rspec-core.
+        next
       end
 
       context 'when running unpack_dvd' do

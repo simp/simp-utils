@@ -1,25 +1,21 @@
-gem_sources = ENV.fetch('GEM_SERVERS','https://rubygems.org').split(/[, ]+/)
+gem_sources = ENV.fetch('GEM_SERVERS', 'https://rubygems.org').split(%r{[, ]+})
 
 gem_sources.each { |gem_source| source gem_source }
 
-group :syntax do
-  gem 'metadata-json-lint'
-  gem 'puppet-lint-trailing_comma-check', require: false
-  gem 'rubocop', '~> 1.89.0'
-  gem 'rubocop-performance', '~> 1.26.0'
-  gem 'rubocop-rake', '~> 0.7.1'
-  gem 'rubocop-rspec', '~> 3.10.0'
-end
-
 group :test do
-  gem 'rake'
-  # renovate: datasource=rubygems versioning=ruby
-  gem 'puppet', ENV.fetch('PUPPET_VERSION', ['>= 7', '< 9'])
-  gem 'rspec'
-  gem 'simplecov'
+  puppet_version = ENV.fetch('PUPPET_VERSION', ['>= 8', '< 9'])
+  openvox_version = ENV.fetch('OPENVOX_VERSION', puppet_version)
   gem 'mocha'
+  gem 'openvox', openvox_version
+  # puppetlast requires logger and ostruct, which are bundled gems as of
+  # Ruby 3.5
+  gem 'logger'
+  gem 'ostruct'
+  gem 'rake'
+  gem 'rspec'
   # renovate: datasource=rubygems versioning=ruby
-  gem 'simp-rake-helpers', ENV.fetch('SIMP_RAKE_HELPERS_VERSION', '~> 5.24.0')
+  gem 'simp-rake-helpers', ENV.fetch('SIMP_RAKE_HELPERS_VERSION', '~> 6.0')
+  gem 'simplecov'
 end
 
 group :development do
@@ -28,12 +24,20 @@ group :development do
   gem 'pry-doc'
 end
 
+group :syntax do
+  # rubocop, rubocop-rake, and rubocop-rspec are pulled in and version-pinned by
+  # voxpupuli-test (via simp-rake-helpers); pinning them here conflicts with its
+  # constraints. rubocop-performance is not a voxpupuli-test dependency, so it
+  # stays explicit.
+  gem 'rubocop-performance', '~> 1.26.0', require: false
+end
+
 group :system_tests do
   gem 'bcrypt_pbkdf'
   gem 'beaker'
   gem 'beaker-rspec'
   # renovate: datasource=rubygems versioning=ruby
-  gem 'simp-beaker-helpers', ENV.fetch('SIMP_BEAKER_HELPERS_VERSION', '~> 2.0.0')
+  gem 'simp-beaker-helpers', ENV.fetch('SIMP_BEAKER_HELPERS_VERSION', '~> 3.1')
 end
 
 # Evaluate extra gemfiles if they exist

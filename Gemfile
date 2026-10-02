@@ -3,7 +3,7 @@ gem_sources = ENV.fetch('GEM_SERVERS', 'https://rubygems.org').split(%r{[, ]+})
 gem_sources.each { |gem_source| source gem_source }
 
 group :test do
-  puppet_version = ENV.fetch('PUPPET_VERSION', ['>= 8', '< 9'])
+  puppet_version = ENV.fetch('PUPPET_VERSION', ['>= 8', '< 10'])
   openvox_version = ENV.fetch('OPENVOX_VERSION', puppet_version)
   gem 'mocha'
   gem 'openvox', openvox_version

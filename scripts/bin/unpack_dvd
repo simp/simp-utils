@@ -12,10 +12,15 @@
 #   * To disable unpacking RPMs/yum repos, run with `--no-unpack-yum`
 #   * Run with `--help` to see more options
 #
-# The script uses the `isoinfo` utility to pull files off of the DVD, so no root
-# access is requried for locally unpacking an ISO.
+# The script reads files off of the DVD with `xorriso` or, if that is not
+# installed, `isoinfo` (from genisoimage), so no root access is required for
+# locally unpacking an ISO.  EL9 and later ship `isoinfo` only in EPEL.  Set
+# UNPACK_DVD_ISO_TOOL to `xorriso` or `isoinfo` to choose one explicitly.
 #
-# The ISO's `.treeinfo` file is used to find the OS family, version, and arch.
+# The `[general]` section of the ISO's `.treeinfo` file is used to find the OS
+# family, version, and arch.  The family is mapped to the OS name Facter reports
+# (`RedHat`, `CentOS`, `AlmaLinux`, `Rocky`, or `OracleLinux`), which names the
+# OS directories below.
 #
 # When unpacking RPMs:
 #
@@ -50,7 +55,7 @@ require 'fileutils'
 require 'find'
 require 'open3'
 require 'shellwords'
-require 'find'
+require 'tmpdir'
 require 'yaml'
 
 File.umask(0o022)
@@ -96,26 +101,122 @@ def bnr
   ('=' * 4) + ' '
 end
 
-# Extract the .treeinfo file from the disc and parse out the relevant values.
-#
-# FIXME: This should really parse as an .ini instead of naively grepping lines.
-def parse_treeinfo_into_discattrs(text)
+# Maps the `family` in an ISO's .treeinfo to the OS name Facter reports
+# (`os.name`), which is how the SIMP server's yum and tftpboot layouts name
+# each OS.
+OS_FAMILIES = [
+  [%r{\A(Red Hat|RHEL|RedHat)}i, 'RedHat'],
+  [%r{\ACentOS}i, 'CentOS'],
+  [%r{\AAlmaLinux}i, 'AlmaLinux'],
+  [%r{\ARocky}i, 'Rocky'],
+  [%r{\AOracle}i, 'OracleLinux'],
+].freeze
+
+# Parse the family, version, and arch out of the `[general]` section of a
+# .treeinfo file.  Other sections also set `version`, so only `[general]` is
+# read.
+def parse_treeinfo_into_discattrs(file)
+  require 'puppet'
+  require 'puppet/util/inifile'
+
+  ini = Puppet::Util::IniConfig::PhysicalFile.new(file)
+  ini.read
+  general = ini.get_section('general')
+  # `entries` also holds comment and blank lines, as Strings.
+  values = general ? general.entries.grep(Array).to_h : {}
+
   discattrs = {}
-  text.each_line do |line|
-    if line =~ %r{^family = (.*)$}
-      fam = Regexp.last_match(1).chomp
-      if fam.chomp.include?('CentOS')
-        discattrs[:family] = 'CentOS'
-      elsif %r{Red Hat|RHEL|RedHat}.match?(fam.chomp)
-        discattrs[:family] = 'RedHat'
-      end
-    elsif line =~ %r{^version = (.*)$}
-      discattrs[:version] = Regexp.last_match(1).chomp
-    elsif line =~ %r{^arch = (.*)$}
-      discattrs[:arch] = Regexp.last_match(1).chomp
+  family = values['family']&.strip
+  if family
+    _, os_name = OS_FAMILIES.find { |regex, _| family.match?(regex) }
+    unless os_name
+      $stderr.puts("ERROR: Unsupported OS family '#{family}' in the DVD .treeinfo file.")
+      exit 1
+    end
+    discattrs[:family] = os_name
+  end
+  discattrs[:version] = values['version']&.strip
+  discattrs[:arch] = values['arch']&.strip
+  discattrs.compact
+end
+
+# Reads files from an ISO image or a block device without mounting it.
+#
+# Uses `xorriso`, which EL8 and later ship in AppStream, and falls back to
+# `isoinfo` from genisoimage, which EL9 and later ship only in EPEL.
+class IsoReader # rubocop:disable Style/OneClassPerFile
+  TOOLS = ['xorriso', 'isoinfo'].freeze
+
+  attr_reader :tool
+
+  def initialize(path)
+    @path = path
+    wanted = ENV['UNPACK_DVD_ISO_TOOL'].to_s.strip
+    candidates = wanted.empty? ? TOOLS : [wanted]
+
+    unless (candidates - TOOLS).empty?
+      fail_with("UNPACK_DVD_ISO_TOOL must be one of: #{TOOLS.join(', ')}")
+    end
+
+    @tool = candidates.find { |t| in_path?(t) }
+    return if @tool
+
+    fail_with(
+      "Could not find #{candidates.join(' or ')} to read the ISO.\n" \
+      '  Install the xorriso package (or genisoimage on EL8) and try again.',
+    )
+  end
+
+  # Every regular file on the ISO, as an absolute path
+  def files
+    if @tool == 'xorriso'
+      out, err, status = Open3.capture3(*xorriso, '-find', '/', '-type', 'f')
+      fail_with("Could not list the files on #{@path}:\n#{err}") unless status.success?
+
+      # xorriso quotes each path the way a shell would
+      out.lines.map { |line| Shellwords.split(line).first }.compact
+    else
+      get_iso_toc(isoinfo.shelljoin)
     end
   end
-  discattrs
+
+  # Copies `entry` from the ISO to the local file `target`.  Returns true on
+  # success.
+  def extract(entry, target)
+    if @tool == 'xorriso'
+      _out, err, status = Open3.capture3(*xorriso, '-osirrox', 'on', '-extract', entry, target)
+      $stderr.puts(err) unless status.success?
+      status.success?
+    else
+      system(*isoinfo, '-R', '-x', entry, out: target)
+    end
+  end
+
+  private
+
+  def xorriso
+    ['xorriso', '-report_about', 'FAILURE', '-indev', @path]
+  end
+
+  def isoinfo
+    if File.blockdev?(@path)
+      ['isoinfo', "dev=#{@path}"]
+    else
+      ['isoinfo', '-i', @path]
+    end
+  end
+
+  def in_path?(cmd)
+    ENV['PATH'].to_s.split(File::PATH_SEPARATOR).any? do |dir|
+      exe = File.join(dir, cmd)
+      File.file?(exe) && File.executable?(exe)
+    end
+  end
+
+  def fail_with(msg)
+    $stderr.puts("ERROR: #{msg}")
+    exit 1
+  end
 end
 
 def update_yum_repo(repo, group)
@@ -261,7 +362,7 @@ def create_major_os_version_symlink(target_basedir, versiondir, maj_versiondir)
   end
 end
 
-def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
+def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, iso, options)
   puts "Unpacking RPM packages from #{discattrs[:path]}...", ''
 
   # Bail if we're trying to unpack into an old-format directory
@@ -275,7 +376,7 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
     exit 1
   end
 
-  iso_toc         = get_iso_toc(isoinfo)
+  iso_toc         = iso.files
   kill_dirs       = iso_toc.map { |x| File.dirname(x) }.uniq
   iso_toc -= kill_dirs
   distdir = File.join(
@@ -323,12 +424,12 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
       end
 
       if !File.exist?(target) || File.stat(target).size.zero?
-        system("#{isoinfo} -R -x #{iso_entry} > #{target}")
+        iso.extract(iso_entry, target)
       end
 
       # Remove size 0 files because they may actually be directories to hold other
       # files and are not really useful in general
-      FileUtils.rm_f(target) if File.stat(target).size.zero?
+      FileUtils.rm_f(target) unless File.size?(target)
     end
 
     progress.advance
@@ -362,7 +463,7 @@ def unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
   puts "Unpacking of #{discattrs[:path]} complete!"
 end
 
-def unpack_pxeboot_from_iso(discattrs, versiondir, isoinfo, options)
+def unpack_pxeboot_from_iso(discattrs, versiondir, iso, options)
   linux_install_path = if options[:actions][:unpack_pxeboot].is_a?(String)
                          options[:actions][:unpack_pxeboot]
                        else
@@ -380,7 +481,7 @@ def unpack_pxeboot_from_iso(discattrs, versiondir, isoinfo, options)
     raise("ERROR: pxeboot unpack dest directory not found: '#{linux_install_path}'")
   end
 
-  iso_toc = get_iso_toc(isoinfo)
+  iso_toc = iso.files
 
   pxe_dest_version = "#{discattrs[:family].downcase}-#{versiondir}-#{discattrs[:arch]}"
   pxe_dest_dir = File.join(linux_install_path, pxe_dest_version)
@@ -402,7 +503,7 @@ def unpack_pxeboot_from_iso(discattrs, versiondir, isoinfo, options)
     puts "WARNING: No PXE boot files found on ISO under #{iso_pxeboot_images_dir}"
   end
   iso_pxeboot_images.each do |image|
-    image_file = Shellwords.escape(File.basename(image))
+    image_file = File.basename(image)
     dest_file = File.join(pxe_dest_dir, image_file)
 
     # Just in case there are subdirectories (haven't run across any yet)
@@ -416,8 +517,7 @@ def unpack_pxeboot_from_iso(discattrs, versiondir, isoinfo, options)
     if options[:verbose]
       puts "    #{image} -> #{dest_file}"
     end
-    cmd = "#{isoinfo} -R -x #{image} > '#{dest_file}'"
-    system(cmd)
+    iso.extract(image, dest_file)
   end
 
   if Process.uid == 0
@@ -456,7 +556,7 @@ def fail_on_unspecific_versiondir(versiondir, options, _discattrs)
     Specific release versions must contain at least one dot (.) character.
 
     The version '#{versiondir}' may have been automatically determined from the ISO\'s
-    metadata; some OS distributions (CentOS) only provide the major OS release
+    metadata; some OS distributions (CentOS, AlmaLinux) only provide the major OS release
     version in their ISOs\' metadata.
 
     WORKAROUND:
@@ -608,12 +708,17 @@ if File.directory?(discattrs[:path])
   exit 1
 end
 
-isoinfo = "isoinfo -i #{discattrs[:path]}"
-if File.blockdev?(discattrs[:path])
-  isoinfo = "isoinfo dev=#{discattrs[:path]}"
-end
+iso = IsoReader.new(discattrs[:path])
+puts "Reading #{discattrs[:path]} with #{iso.tool}" if options[:verbose]
 
-discattrs.merge!(parse_treeinfo_into_discattrs(`#{isoinfo} -R -x /.treeinfo`))
+Dir.mktmpdir do |dir|
+  treeinfo = File.join(dir, 'treeinfo')
+  unless iso.extract('/.treeinfo', treeinfo) && File.size?(treeinfo)
+    $stderr.puts("ERROR: Could not read /.treeinfo from #{discattrs[:path]}; is it an OS install DVD?")
+    exit 1
+  end
+  discattrs.merge!(parse_treeinfo_into_discattrs(treeinfo))
+end
 
 # If everything isn't filled, die a slow death.
 discattrs.each_pair do |k, v|
@@ -637,7 +742,7 @@ end
 fail_on_unspecific_versiondir(versiondir, options, discattrs)
 
 if options[:actions][:unpack_yum_repo]
-  unpack_and_create_yum_repo_from_iso(discattrs, versiondir, isoinfo, options)
+  unpack_and_create_yum_repo_from_iso(discattrs, versiondir, iso, options)
 else
   puts
   puts '!! Skipping RPM unpack + YUM repo creation'
@@ -645,7 +750,7 @@ else
 end
 
 if options[:actions][:unpack_pxeboot]
-  unpack_pxeboot_from_iso(discattrs, versiondir, isoinfo, options)
+  unpack_pxeboot_from_iso(discattrs, versiondir, iso, options)
 else
   puts
   puts '!! Skipping pxeboot unpack for tftpboot'

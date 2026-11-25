@@ -36,18 +36,40 @@ describe 'unpack_dvd script' do
 
   required_apps = [
     'mkisofs',
-    'isoinfo',
     'rpmbuild',
     'createrepo_c',
   ]
   require 'facter'
   missing_apps = required_apps.reject { |x| Facter::Core::Execution.which(x) }
 
-  Dir.glob(File.join(__dir__, 'files', 'unpack_dvd', 'ISO', '*')).each do |target|
-    next unless File.directory?(target)
+  # Run every fixture through each ISO reader that is installed
+  iso_tools = ['xorriso', 'isoinfo'].select { |x| Facter::Core::Execution.which(x) }
+  missing_apps << 'xorriso or isoinfo' if iso_tools.empty?
+
+  context 'when neither xorriso nor isoinfo is in the PATH' do
+    it 'fails with a clear error' do
+      require 'open3'
+      require 'rbconfig'
+      require 'tmpdir'
+      Dir.mktmpdir do |dir|
+        _out, err, status = Open3.capture3(
+          { 'PATH' => dir }, RbConfig.ruby, unpack_dvd, '-d', dir, __FILE__
+        )
+        expect(status.exitstatus).to eq 1
+        expect(err).to include('Could not find xorriso or isoinfo')
+      end
+    end
+  end
+
+  fixtures = Dir.glob(File.join(__dir__, 'files', 'unpack_dvd', 'ISO', '*')).select { |x| File.directory?(x) }
+  fixtures.product(iso_tools.empty? ? [nil] : iso_tools).each do |target, iso_tool|
     target_name = File.basename(target) # rubocop:disable RSpec/LeakyLocalVariable
 
-    context "when unpacking an ISO for #{target_name}" do
+    # Some distributions (CentOS, AlmaLinux) only put the major OS version in
+    # the .treeinfo, which unpack_dvd refuses without -v.
+    treeinfo_version = File.read(File.join(target, '.treeinfo'))[%r{^\[general\]$.*?^version = (\S+)}m, 1]
+
+    context "when unpacking an ISO for #{target_name} with #{iso_tool}" do
       let(:working_dir) { File.join(tmpdir, target_name) }
       let(:os) { target_name.split('_').first }
       let(:os_version) { target_name.split('_').last }
@@ -55,7 +77,7 @@ describe 'unpack_dvd script' do
       let(:iso_path) { File.join(tmpdir, "#{target_name}.iso") }
       let(:output_dir) { File.join(working_dir, 'output') }
       let(:tftpboot_dir) { File.join(working_dir, 'tftpboot') }
-      let(:cmd) { "ruby '#{unpack_dvd}' -d '#{output_dir}' '#{iso_path}'" }
+      let(:cmd) { "UNPACK_DVD_ISO_TOOL=#{iso_tool} ruby '#{unpack_dvd}' -d '#{output_dir}' '#{iso_path}'" }
 
       before(:each) do
         FileUtils.mkdir_p([output_dir, tftpboot_dir])
@@ -99,10 +121,10 @@ describe 'unpack_dvd script' do
         end
 
         context 'without -v' do
-          if target_name.split('_').first == 'CentOS'
-            it('fails (because CentOS ISOs only provide major OS versions)') { expect(exit_status).to eq 1 }
-          else
+          if treeinfo_version.include?('.')
             it('executes without failures') { expect(exit_status).to eq 0 }
+          else
+            it('fails (because the ISO only provides the major OS version)') { expect(exit_status).to eq 1 }
           end
         end
 

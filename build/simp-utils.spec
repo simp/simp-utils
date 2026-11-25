@@ -43,7 +43,7 @@ end
 
 Summary: SIMP Utils
 Name: simp-utils
-Version: 6.9.0
+Version: 6.10.0
 Release: %{lua: print(package_release)}%{?dist}
 License: Apache License, Version 2.0
 Group: Applications/System
@@ -57,7 +57,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 # So, use weak dependencies known to the package manager.
 # See rpm.org/user_doc/dependencies.html.
 Recommends: (openvox-agent >= 8 or puppet-agent >= 6)
-Recommends: genisoimage
+Recommends: (xorriso or genisoimage)
 Recommends: rpm
 Recommends: yum
 Recommends: yum-utils
@@ -112,6 +112,15 @@ chmod -R u=rwx,g=rx,o=rx %{buildroot}/usr/local/*bin
 # Post uninstall stuff
 
 %changelog
+* Wed Nov 25 2026 Hazel Caballero <hazel@sicura.us> - 6.10.0-1
+- unpack_dvd:
+  - Support AlmaLinux, Rocky Linux, and Oracle Linux media, unpacked under
+    their Facter OS names (AlmaLinux, Rocky, OracleLinux)
+  - Read ISOs with xorriso, falling back to isoinfo, which EL9 and later
+    ship only in EPEL
+  - Fail with a clear error for an unsupported OS family or when neither
+    tool is installed
+
 * Tue Aug 25 2026 Steven Pritchard <steve@sicura.us> - 6.9.0-1
 - Support OpenVox
   - Accept openvox-agent as an alternative to puppet-agent, using RPM

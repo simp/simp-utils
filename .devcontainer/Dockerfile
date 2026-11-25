@@ -24,7 +24,7 @@ RUN dnf -y update \
     bash-completion \
     sudo \
     createrepo_c \
-    genisoimage \
+    xorriso \
     rpm-build \
   && { \
     dnf -y install yamllint \

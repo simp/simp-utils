@@ -81,15 +81,15 @@ jobs:
         with:
           ruby-version: ${{matrix.puppet.ruby_version}}
           bundler-cache: true
-      # The unpack_dvd unit tests need mkisofs, isoinfo, rpmbuild, and
-      # createrepo_c to build and unpack a fixture ISO; without them, those
-      # tests are silently skipped.  Ubuntu's genisoimage provides
-      # mkisofs-compatible genisoimage and isoinfo binaries, but no mkisofs
-      # name, so add a compatibility symlink.
+      # The unpack_dvd unit tests need mkisofs, rpmbuild, and createrepo_c to
+      # build and unpack a fixture ISO, and run once with each of xorriso and
+      # isoinfo; without them, those tests are silently skipped.  Ubuntu's
+      # genisoimage provides mkisofs-compatible genisoimage and isoinfo
+      # binaries, but no mkisofs name, so add a compatibility symlink.
       - name: 'Install ISO/RPM tooling for the unpack_dvd tests'
         run: |
           sudo apt-get update
-          sudo apt-get install -y genisoimage rpm createrepo-c
+          sudo apt-get install -y genisoimage xorriso rpm createrepo-c
           command -v mkisofs || sudo ln -s "$(command -v genisoimage)" /usr/local/bin/mkisofs
       - run: 'bundle exec rake spec'
         continue-on-error: ${{matrix.puppet.experimental}}
